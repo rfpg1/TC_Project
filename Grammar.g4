@@ -6,7 +6,7 @@
 grammar Grammar;
 
 /* non-terminals start with lowercase */
-prog:	(comment|declaration)* ;
+prog:	(declaration|comment|NEWLINE)+ ;
 
 /* o ANTLR suport +,?,* das expressões regulares nas regras */
 /*
@@ -17,19 +17,24 @@ expr:	expr ('*'|'/') expr
     ;
 */
 declaration: 
+	DEF (WHITESPACE)* '('(DEF)(','DEF)* ')'';'
 ;
 
 comment: '(*'(ALPHANUM|NEWLINE|WHITESPACE)*'*)'
 	;
 
-definition: ;
+definition: 
+;
 	
 		
 /* Entre aspas '1' ficam os caracteres correspondentes */
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
-NEWLINE : [\r\n]+ ;
+NEWLINE : [\r\n]+ -> skip;
 INT     : [0-9]+ ;
-ALPHANUM: [a-zA-Z0-9][a-zA-Z0-9_]+;
+ALPHANUM: [a-zA-Z0-9_]+;
 WHITESPACE: [ ]+ -> skip;
+VARIABLE_NAME: [_a-zA-Z][_a-zA-Z0-9]+;
+TYPE: 'Double' | 'Int' | 'String' | 'Boolean' | 'Float';
+DEF: VARIABLE_NAME ':' TYPE;
 
