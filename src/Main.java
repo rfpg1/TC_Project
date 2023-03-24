@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class Main {
 	
 	public static void main(String[] args) throws IOException {
-		CharStream i = CharStreams.fromFileName("hello_world.sp");
-		GrammarLexer lexer = new GrammarLexer(i);
+		CharStream input = CharStreams.fromFileName("hello_world.sp");
+		GrammarLexer lexer = new GrammarLexer(input);
 
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		GrammarParser parser = new GrammarParser(tokens);
