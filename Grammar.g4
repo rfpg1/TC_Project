@@ -14,21 +14,35 @@ comment: '(*'(WORD|NEWLINE|SPACE|NUMBER)*'*)'
 ;
 
 declaration:
-	WORD SPACE* ':' SPACE* type SPACE* ';'
+	vname_type '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* ';'
+;
+
+vname_type:
+	WORD SPACE* ':' SPACE* type SPACE* refinement?
+;
+
+refinement:
+	'where' SPACE* WORD SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE)
 ;
 
 
 type:
-	(DOUBLE|INT)
+	(DOUBLE|INT|BOOLEAN|FLOAT|STRING)
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
 DOUBLE: 'Double';
 INT: 'Int';
+BOOLEAN: 'Boolean';
+FLOAT: 'Float';
+STRING: 'String';
+TRUE: 'true';
+FALSE: 'false';
+OPERATOR: '&&' | '||' | '==' | '!=' | '>=' | '<=' | '<' | '>' | '+' | '-' | '*' | '/' | '%';
 NEWLINE : [\r\n]+ -> skip;
 SPACE: ' ' -> skip;
-WORD: [a-zA-Z]+;
-NUMBER: [0-9];
+WORD: [a-zA-Z_]+;
+NUMBER: [0-9_]+;
 
 
 
