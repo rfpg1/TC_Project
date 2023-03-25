@@ -10,11 +10,11 @@ prog:	(comment|declaration|NEWLINE|definition)* ;
 
 /* o ANTLR suport +,?,* das expressões regulares nas regras */
 
-comment: '(*'(WORD|NEWLINE|SPACE|NUMBER)*'*)'
+comment: SPACE* '(*'(WORD|NEWLINE|SPACE|NUMBER)*'*)'
 ;
 
 declaration:
-	vname_type '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* ';'
+	SPACE* vname_type '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* ';'
 ;
 
 vname_type:
@@ -31,11 +31,23 @@ type:
 ;
 
 definition:
-	(value)
+	(value|function)
 ;
 
 function:
+	SPACE* vname_type SPACE* '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* '{'
+	(if_else)
+	SPACE* '}'
 	
+;
+
+if_else:
+	SPACE* 'if' SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* '{'
+	SPACE* statement SPACE* '}'
+;
+
+statement:
+	'return' SPACE* (WORD|NUMBER) SPACE* ';'
 ;
 
 value:
@@ -52,10 +64,9 @@ TRUE: 'true';
 FALSE: 'false';
 OPERATOR: '&&' | '||' | '==' | '!=' | '>=' | '<=' | '<' | '>' | '+' | '-' | '*' | '/' | '%';
 NEWLINE : [\r\n]+ -> skip;
-SPACE: ' ' -> skip;
+SPACE: (' ' | '\t') -> skip;
 WORD: [a-zA-Z_]+;
 NUMBER: [0-9_]+;
-
 
 
 
