@@ -6,7 +6,7 @@
 grammar Grammar;
 
 /* non-terminals start with lowercase */
-prog:	(comment|declaration|NEWLINE)* ;
+prog:	(comment|declaration|NEWLINE|definition)* ;
 
 /* o ANTLR suport +,?,* das expressões regulares nas regras */
 
@@ -28,6 +28,18 @@ refinement:
 
 type:
 	(DOUBLE|INT|BOOLEAN|FLOAT|STRING)
+;
+
+definition:
+	(value)
+;
+
+function:
+	
+;
+
+value:
+	vname_type '=' SPACE* NUMBER SPACE* ';'
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
