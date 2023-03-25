@@ -10,7 +10,7 @@ prog:	(comment|declaration|NEWLINE|definition)* ;
 
 /* o ANTLR suport +,?,* das expressões regulares nas regras */
 
-comment: SPACE* '(*'(WORD|NEWLINE|SPACE|NUMBER)*'*)'
+comment: SPACE* '(*'(WORD|VARIABLE|NEWLINE|SPACE|NUMBER)*'*)'
 ;
 
 declaration:
@@ -18,11 +18,11 @@ declaration:
 ;
 
 vname_type:
-	WORD SPACE* ':' SPACE* type SPACE* refinement?
+	(VARIABLE|WORD) SPACE* ':' SPACE* type SPACE* refinement?
 ;
 
 refinement:
-	'where' SPACE* WORD SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE)
+	'where' SPACE* (VARIABLE|WORD) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE|VARIABLE)
 ;
 
 
@@ -36,18 +36,18 @@ definition:
 
 function:
 	SPACE* vname_type SPACE* '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* '{'
-	(if_else|while_condition)
+	(if_else|while_condition)*
 	SPACE*
 	
 ;
 
 if_else:
-	SPACE* 'if' SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* '{'
+	SPACE* 'if' SPACE* (WORD|VARIABLE|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|VARIABLE|NUMBER|TRUE|FALSE) SPACE* '{'
 	SPACE* statement* SPACE* '}' (SPACE|NEWLINE)* ('else' SPACE* '{' SPACE* statement SPACE* '}')?
 ;
 
 while_condition:
-	SPACE* 'while' SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* '{'
+	SPACE* 'while' SPACE* (WORD|VARIABLE|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|VARIABLE|NUMBER|TRUE|FALSE) SPACE* '{'
 	SPACE* statement* SPACE* '}'
 ;
 
@@ -56,11 +56,11 @@ statement:
 ;
 
 return_statement:
-	'return' SPACE* (WORD|NUMBER) SPACE* ';'
+	'return' SPACE* (WORD|VARIABLE|NUMBER) SPACE* ';'
 ;
 
 value:
-	vname_type '=' SPACE* NUMBER SPACE* ';'
+	vname_type '=' SPACE* (NUMBER|WORD|VARIABLE) SPACE* ';'
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
@@ -76,6 +76,7 @@ NEWLINE : [\r\n]+ -> skip;
 SPACE: (' ' | '\t') -> skip;
 WORD: [a-zA-Z_]+;
 NUMBER: [0-9_]+;
+VARIABLE: [a-zA-Z_][a-zA-Z0-9_]*;
 
 
 

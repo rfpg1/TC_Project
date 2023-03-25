@@ -29,12 +29,13 @@ It starts like a declaration and then we open and close brackets
 Inside the brackets we can have and if else situation or a while either one will be followed by a condition and then open and close brackets and inside we have multiple statements
 
 ##### Statements
-Right now the statements can only have return and the a word followed by ';' 
-
+Statements can be a return statement with a value or defining a variable
 
 ### TODO:
-The value of the variable right now can only be a number, change to accept other things
-
 Allowed other statements
+
+Change definition of number to be Integer or Float or Double
+
+Allow unary operator
 
 

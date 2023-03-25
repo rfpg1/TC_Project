@@ -1,5 +1,5 @@
  (* COMMENT *)
-sample_normal:Double (mean:Double, stddev:Double where stddev != 0);
+sample_normal : Double (mean:Double, stddev:Double where stddev != 0);
 abs:Int where abs > 0 (val:Int);
 pi:Int = 3;
 max:Int (a:Int, b:Int) {
@@ -9,6 +9,6 @@ max:Int (a:Int, b:Int) {
 		return b;
 	}
 	while true == true {
-	
+		pi_3:Int = 3;
 	}
 }
