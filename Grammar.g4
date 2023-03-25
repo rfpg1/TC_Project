@@ -36,17 +36,26 @@ definition:
 
 function:
 	SPACE* vname_type SPACE* '(' SPACE* vname_type SPACE* (',' SPACE* vname_type)* SPACE* ')' SPACE* '{'
-	(if_else)
-	SPACE* '}'
+	(if_else|while_condition)
+	SPACE*
 	
 ;
 
 if_else:
 	SPACE* 'if' SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* '{'
-	SPACE* statement SPACE* '}'
+	SPACE* statement* SPACE* '}' (SPACE|NEWLINE)* ('else' SPACE* '{' SPACE* statement SPACE* '}')?
+;
+
+while_condition:
+	SPACE* 'while' SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* OPERATOR SPACE* (WORD|NUMBER|TRUE|FALSE) SPACE* '{'
+	SPACE* statement* SPACE* '}'
 ;
 
 statement:
+	(value|return_statement)
+;
+
+return_statement:
 	'return' SPACE* (WORD|NUMBER) SPACE* ';'
 ;
 

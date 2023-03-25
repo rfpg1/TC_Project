@@ -5,5 +5,10 @@ pi:Int = 3;
 max:Int (a:Int, b:Int) {
 	if a > b {
 		return a;
+	} else {
+		return b;
+	}
+	while true == true {
+	
 	}
 }
