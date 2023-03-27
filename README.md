@@ -38,4 +38,5 @@ Change definition of number to be Integer or Float or Double
 
 Allow unary operator
 
+Define strings, strings aren't yet allowed
 
