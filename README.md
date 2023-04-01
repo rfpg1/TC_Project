@@ -1,5 +1,8 @@
 # TC_Project
 
+## Author
+Ricardo Gonçalves 52765
+
 #### Grammar definition
 A program will be defined by either a comment, a definition, a declaration or break lines multiple times
 
