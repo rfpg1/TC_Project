@@ -17,7 +17,7 @@ vname_type:
 ;
 
 type:
-	(DOUBLE|INT|BOOLEAN|FLOAT|STRING)
+	(DOUBLE|INT|BOOLEAN|FLOAT|STRING)('[]')?
 ;
 
 refinement:
@@ -40,16 +40,15 @@ value:
 	vname_type '=' SPACE* (number|string_lit|VARIABLE) SPACE* ';'
 ;
 
-arrays:
-	(VARIABLE '['position']' ';'
-	|'get_array()['position']' ';'
-	)
-;
+arrays
+ : VARIABLE '[' position ']' ';'
+ | 'get_array' '(' ')' '[' position ']' ';'
+ ;
 
 position:
 	pos
-	|pos SPACE* (MATH_OPERATOR) SPACE* pos
-	|pos SPACE* (MATH_OPERATOR) SPACE* pos SPACE* (MATH_OPERATOR) SPACE* position
+	|pos MATH_OPERATOR pos
+	|position (MATH_OPERATOR) pos (MATH_OPERATOR) position
 ;
 
 pos:
@@ -130,10 +129,12 @@ STRING: 'String';
 TRUE: 'true';
 FALSE: 'false';
 NUMBER_INT: [0-9_]+; /* Underscore can be in any position */
-NUMBER_FLOAT: ('.'[0-9]+|[0-9]+.[0-9]+);
+NUMBER_FLOAT: ('.'[0-9]+|[0-9]+'.'[0-9]+);
 MATH_OPERATOR: '+' | '-' | '*' | '/' | '%';
 BOOLEAN_OPERATOR: '&&' | '||' | '==' | '!=' | '>=' | '<=' | '<' | '>' ;
 NEWLINE : [\r\n]+ -> skip;
 SPACE: (' '|'\t') -> skip;
 VARIABLE: [a-zA-Z_][a-zA-Z0-9_]*;
 ANYCHAR: (.)+?;
+
+
