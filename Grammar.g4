@@ -29,7 +29,7 @@ number:
 ;
 
 string_lit:
-	'"' (ANYCHAR|number|operator|SPACE)* '"'
+	'"' (ANYCHAR|number|operator|SPACE|VARIABLE|TRUE|FALSE)* '"'
 ;
 
 statement:
@@ -47,6 +47,7 @@ arrays
 
 position:
 	pos
+	| '(' pos ')'
 	|pos MATH_OPERATOR pos
 	|position (MATH_OPERATOR) pos (MATH_OPERATOR) position
 ;
@@ -65,7 +66,7 @@ function_call:
 ;
 
 return_statement:
-	'return' SPACE* (VARIABLE|number) SPACE* ';'
+	'return' SPACE* (VARIABLE|number|string_lit|TRUE|FALSE) SPACE* ';'
 ;
 
 definition:
@@ -80,7 +81,7 @@ function:
 ;
 
 if_statement:
-	'if' SPACE* boolean_expression SPACE* '{'
+	'if' (NOT_OPERATOR)?boolean_expression '{'
 	statement*
 	'}' else_statement?
 ;
@@ -90,11 +91,12 @@ else_statement:
 ;
 
 while_statement:
-	'while' boolean_expression '{' statement* '}'
+	'while' (NOT_OPERATOR)? boolean_expression '{' statement* '}'
 ;
 
 boolean_expression:
-	(conditions_values
+	('(' boolean_expression ')'
+	|conditions_values
 	| conditions_values operator conditions_values
 	| (conditions_values operator conditions_values operator boolean_expression)
 	)
@@ -132,6 +134,7 @@ NUMBER_INT: [0-9_]+; /* Underscore can be in any position */
 NUMBER_FLOAT: ('.'[0-9]+|[0-9]+'.'[0-9]+);
 MATH_OPERATOR: '+' | '-' | '*' | '/' | '%';
 BOOLEAN_OPERATOR: '&&' | '||' | '==' | '!=' | '>=' | '<=' | '<' | '>' ;
+NOT_OPERATOR: '!';
 NEWLINE : [\r\n]+ -> skip;
 SPACE: (' '|'\t') -> skip;
 VARIABLE: [a-zA-Z_][a-zA-Z0-9_]*;
