@@ -55,9 +55,11 @@ Can be a number, variable or a boolean value
 
 ## Run:
 
-chmod +x script.sh
+Give permissions first: chmod +x setup.sh
 
-./script.sh < --tree > < filename >
+To run setup: ./setup.sh
+
+To run script: ./script.sh < --tree > < filename >
 
 Example: ./script.sh --tree tests/positive/hello_world.sp
 
