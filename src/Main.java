@@ -1,4 +1,3 @@
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,7 +16,6 @@ import com.google.gson.GsonBuilder;
 
 public class Main {
 
-	private final static String PATH = "test" + File.separator;
 	private static final Gson PRETTY_PRINT_GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Gson GSON = new Gson();
 
@@ -26,13 +24,14 @@ public class Main {
 		for(int i = 0; i < args.length; i++) {
 			if(!args[i].equals("--tree" )) {
 				try {
-					CharStream input = CharStreams.fromFileName(PATH + args[i]);
+					CharStream input = CharStreams.fromFileName(args[i]);
 					GrammarLexer lexer = new GrammarLexer(input);
 
 					CommonTokenStream tokens = new CommonTokenStream(lexer);
 					GrammarParser parser = new GrammarParser(tokens);
 					parser.setBuildParseTree(true);
 					ParseTree p = parser.prog();
+					System.out.println(p.toStringTree(parser));	
 					if(treeFlag) {
 						System.out.println(toJson(p));
 					}

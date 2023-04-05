@@ -1,4 +1,4 @@
-# TC_Project
+# TC Project - sPlash Compiler
 
 ## Author
 Ricardo Gonçalves 52765
@@ -34,6 +34,8 @@ Inside the brackets we can have have multiple statements
 
 ##### Statements
 Types of staments: 
+
+Variable assignment which can be variable name ':' type '=' a value (String, number, boolean) or the type can be optional in case the variable has been defined before.
 
 return_statement is "return" followed by a value or defining a variable
 

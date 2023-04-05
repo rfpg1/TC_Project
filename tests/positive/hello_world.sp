@@ -12,8 +12,8 @@ main:Int(){
 		} else {
 			while      !(true) {
 				if false {
-					_ola:Double = 3;
-					return _ola;
+					_ola:Double = 3; 
+					return _ola;(*** comment *)
 				}
 			}
 		}
