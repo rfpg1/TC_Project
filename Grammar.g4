@@ -2,7 +2,7 @@
 grammar Grammar;
 
 /* non-terminals start with lowercase */
-prog: (comment|declaration|definition|statement)*EOF;
+prog: (comment|declaration|definition|statement)*;
 
 comment:
 	'(*' (ANYCHAR|VARIABLE|number|operator)* '*)'
@@ -122,7 +122,7 @@ operator:
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
-
+END_OF_FILE: EOF ;
 DOUBLE: 'Double';
 INT: 'Int';
 BOOLEAN: 'Boolean';
