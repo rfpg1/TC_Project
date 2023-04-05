@@ -2,18 +2,18 @@
 grammar Grammar;
 
 /* non-terminals start with lowercase */
-prog: (comment|declaration|NEWLINE|SPACE|definition|statement)*EOF;
+prog: (comment|declaration|definition|statement)*EOF;
 
 comment:
-	'(*' (ANYCHAR|VARIABLE|SPACE|NEWLINE|number|operator)* '*)'
+	'(*' (ANYCHAR|VARIABLE|number|operator)* '*)'
 ;
 
 declaration:
-	vname_type '('args_def?')' SPACE* ';'
+	vname_type '('args_def?')' ';'
 ;
 
 vname_type:
-	(VARIABLE) SPACE* ':' SPACE* type SPACE* refinement? /* Nomes das funções não podem começar com números */
+	(VARIABLE) ':' type refinement? /* Nomes das funções não podem começar com números */
 ;
 
 type:
@@ -21,7 +21,7 @@ type:
 ;
 
 refinement:
-	'where' SPACE* (VARIABLE) SPACE* operator SPACE* (number|string_lit|TRUE|FALSE)
+	'where' (VARIABLE) operator (number|string_lit|TRUE|FALSE)
 ;
 
 number:
@@ -29,7 +29,7 @@ number:
 ;
 
 string_lit:
-	'"' (ANYCHAR|number|operator|SPACE|VARIABLE|TRUE|FALSE)* '"'
+	'"' (ANYCHAR|number|operator|VARIABLE|TRUE|FALSE)* '"'
 ;
 
 statement:
@@ -37,7 +37,7 @@ statement:
 ;
 
 value:
-	vname_type '=' SPACE* (number|string_lit|VARIABLE) SPACE* ';'
+	vname_type '=' (number|string_lit|VARIABLE) ';'
 ;
 
 arrays
@@ -58,7 +58,7 @@ pos:
 
 expression:
 	(function_call
-	| (number|VARIABLE|ANYCHAR|SPACE)*';')
+	| (number|VARIABLE|ANYCHAR)*';')
 ;
 
 function_call:
@@ -66,7 +66,7 @@ function_call:
 ;
 
 return_statement:
-	'return' SPACE* (VARIABLE|number|string_lit|TRUE|FALSE) SPACE* ';'
+	'return' (VARIABLE|number|string_lit|TRUE|FALSE) ';'
 ;
 
 definition:
@@ -74,9 +74,9 @@ definition:
 ;
 
 function:
-	vname_type SPACE* '('SPACE* args_def? SPACE*')' SPACE*
+	vname_type '('args_def?')'
 	'{'
-	(statement|SPACE)*
+	(statement)*
 	'}'
 ;
 
@@ -110,7 +110,7 @@ conditions_values:
 ;
 
 args_def:
-	vname_type SPACE* (',' vname_type SPACE*)*
+	vname_type (',' vname_type)*
 ;
 
 args_value:
