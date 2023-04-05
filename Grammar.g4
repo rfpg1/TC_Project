@@ -112,7 +112,7 @@ definition:
 function:
 	vname_type LEFT_PAR args_def? RIGHT_PAR
 	LEFT_BRACKET
-	(statement|function|comment)*
+	(statement|function|comment)* return_statement?
 	RIGHT_BRAKCET
 ;
 

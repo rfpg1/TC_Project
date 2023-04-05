@@ -57,7 +57,10 @@ Can be a number, variable or a boolean value
 
 chmod +x script.sh
 
-./script.sh <--tree> <filename>
+./script.sh < --tree > < filename >
 
 Example: ./script.sh --tree tests/positive/hello_world.sp
+
 Example: ./script.sh tests/positive/hello_world.sp
+
+Example: ./script.sh tests/positive/hello_world.sp --tree

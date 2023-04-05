@@ -1,1 +1,1 @@
-java -jar Runnable.jar $@
+java -jar Splash.jar $@

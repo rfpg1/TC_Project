@@ -31,7 +31,6 @@ public class Main {
 					GrammarParser parser = new GrammarParser(tokens);
 					parser.setBuildParseTree(true);
 					ParseTree p = parser.prog();
-					System.out.println(p.toStringTree(parser));	
 					if(treeFlag) {
 						System.out.println(toJson(p));
 					}
