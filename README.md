@@ -59,4 +59,5 @@ chmod +x script.sh
 
 ./script.sh <--tree> <filename>
 
-Example: ./script.sh --tree hello_world.sp
+Example: ./script.sh --tree tests/positive/hello_world.sp
+Example: ./script.sh tests/positive/hello_world.sp
