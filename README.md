@@ -6,11 +6,15 @@ Ricardo Gonçalves 52765
 #### Grammar definition
 A program will be defined by either a comment, a definition, a declaration or break lines multiple times
 
+Every whitespace, breakline or tab is being ignore so that makes this language case insensitive
+
+\t or \n inside a String is not recognized as a tab or a newline
+
 ##### Comment
 A comment will begin with (* in the middle can every kind of character include break lines and ends with *). 
 
 ##### Declaration
-A declaration will always begin with the name of the function followed by ':' and the return type
+A declaration is a function and will always begin with the name of the function followed by ':' and the return type
 
 It is possible to have refinement but it is not mandatory
 
@@ -20,22 +24,37 @@ The input is defined as the name of the variable and it's type and can also have
 
 ##### Definition
 It can be a definition of a variable and its value which is defined as the variable name and its type separated by ':' then a equals sign and the value, which can be String, Double, Int, Float or Boolean
+
 It can also be a function
 
 ###### Function
-It starts like a declaration and then we open and close brackets
+It starts like a declaration and then we open and close brackets instead of ';'
 
-Inside the brackets we can have and if else situation or a while either one will be followed by a condition and then open and close brackets and inside we have multiple statements
+Inside the brackets we can have have multiple statements
 
 ##### Statements
-Statements can be a return statement with a value or defining a variable
+Types of staments: 
 
-### TODO:
-Allowed other statements
+return_statement is "return" followed by a value or defining a variable
 
-Change definition of number to be Integer or Float or Double
+if_statement is "if" followed by a optional not_operator followed by a boolean_expression then open and close brackets and inside can have multiple statements. After closing brackets we can have an optional else_statement
 
-Allow unary operator
+else_statement is equal do if statement but 'else' instead of 'if', there isn't any else_statement after closing brackets and there isn't any boolean_expression to be evaluated
 
-Define strings, strings aren't yet allowed
+while_statement is equal do if statement but 'while' instead of 'if' and there isn't any else_statement after closing brackets
 
+###### Boolean Expression
+
+A boolean_expression can condition_value, a boolean_expresion inside parenthesis, a condition_value followed by an operator followed by a condition_value and a condition_value followed by an operator followed by a condition_value followed by an operator and another boolean_expression
+
+###### Condition Value
+
+Can be a number, variable or a boolean value
+
+## Run:
+
+chmod +x script.sh
+
+./script.sh <--tree> <filename>
+
+Example: ./script.sh --tree hello_world.sp

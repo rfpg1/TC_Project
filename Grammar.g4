@@ -33,7 +33,7 @@ string_lit:
 ;
 
 statement:
-	(return_statement|expression|value|if_statement|while_statement|arrays)
+	(expression|value|if_statement|while_statement|arrays|declaration|comment)
 ;
 
 value:
@@ -76,22 +76,22 @@ definition:
 function:
 	vname_type '('args_def?')'
 	'{'
-	(statement)*
+	(statement|function|comment)*
 	'}'
 ;
 
 if_statement:
 	'if' (NOT_OPERATOR)?boolean_expression '{'
-	statement*
+	(statement*) return_statement?
 	'}' else_statement?
 ;
 
 else_statement:
-	'else' '{' statement* '}'
+	'else' '{' (statement*) return_statement?'}'
 ;
 
 while_statement:
-	'while' (NOT_OPERATOR)? boolean_expression '{' statement* '}'
+	'while' (NOT_OPERATOR)? boolean_expression '{' (statement*)return_statement? '}'
 ;
 
 boolean_expression:
