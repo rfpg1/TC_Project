@@ -78,7 +78,7 @@ vname_type_optional:
 
 arrays
  : VARIABLE LEFT_R position RIGHT_R SEMICOLON
- | GET_ARRAY LEFT_PAR RIGHT_PAR LEFT_R position RIGHT_R SEMICOLON
+ | VARIABLE '.' GET_ARRAY LEFT_PAR RIGHT_PAR LEFT_R position RIGHT_R SEMICOLON
  ;
 
 position:

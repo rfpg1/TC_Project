@@ -4,8 +4,9 @@ main:Int(){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != "true");
 	abs:Int where abs > 0 (val:Int)  ;
-	pi:Int[] = "true\t";
-	pi:String = _2;
+	pi1:Int[] = "true\t";
+	pi2:String = _2;
+	pi3 where pi3 < 2 = "a" + "b" + "c" + "d" + "e";
 	max:Int (a:Int, b:Int) {
 		if true    && false || true > 2 < true {
 			(* TESTE *)
@@ -18,6 +19,9 @@ main:Int(){
 			}
 		}
 	}
-	f(3      );
-	get_array()[i+1   ];
+	a;
+	f(3,"4");
+	g(3,2);
+	abc.get_array()[i+1*2];
+	a[1];
 }
