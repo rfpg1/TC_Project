@@ -15,6 +15,7 @@ import utils.Pair;
 
 public class Main {
 
+	private static final String TERMINAL_NODE_IMPL = "TerminalNodeImpl";
 	private static final String COMMENT = "Comment";
 	private static final String DEFINITION = "Definition";
 	private static final String VNAME_TYPE = "Vname_type";
@@ -41,6 +42,10 @@ public class Main {
 	private static final String POSITION = "Position";
 	private static final String POS = "Pos";
 
+
+	private static final int VARIABLE_TYPE = 34;
+	private static final int BOOLEAN_TYPE = 7;
+
 	public static void main(String[] args) throws IOException, FunctionAlreadyExistsException {
 		boolean treeFlag = containsFlag(args, "--tree");
 		for(int i = 0; i < args.length; i++) {
@@ -55,7 +60,7 @@ public class Main {
 					ParseTree p = parser.prog();
 					verify(new Context(), toMap(p));
 					if(treeFlag) {
-						//System.out.println(toMap(p));
+						System.out.println(toMap(p));
 					}
 				} catch(IOException e) {
 					System.out.println("File " + args[i] + " does not exist");
@@ -78,7 +83,6 @@ public class Main {
 				function(context, p, type);
 			}
 		}
-		System.out.println("Teste");
 	}
 
 	private static Map<String, Object> toMap(ParseTree p) {
@@ -87,6 +91,7 @@ public class Main {
 		return map;
 	}
 
+	@SuppressWarnings({ "unchecked"})
 	private static void traverse(ParseTree tree, Map<String, Object> map) {
 		boolean b = true;
 		if(tree.getParent() != null) {
@@ -123,6 +128,17 @@ public class Main {
 						values.put("Variable", tree.getChild(3).getChild(1).getText());
 						values.put("Operator", tree.getChild(3).getChild(2).getText());
 						values.put("Value", tree.getChild(3).getChild(3).getText());
+						String type = tree.getChild(3).getChild(3).getClass().getSimpleName().replaceAll("Context$", "");
+						if(type.equals(TERMINAL_NODE_IMPL)) {
+							Token token = ((TerminalNodeImpl) tree.getChild(3).getChild(3)).getSymbol();
+							if(token.getType() == VARIABLE_TYPE) {
+								values.put("Type", "Variable");
+							} else if(token.getType() == BOOLEAN_TYPE) {
+								values.put("Type", "boolean");
+							}
+						} else {
+							values.put("Type", type);
+						}
 
 						refinement.add(values);
 						nested.put("Refinement", refinement);						
@@ -133,8 +149,22 @@ public class Main {
 				map.put(name, children);
 				Map<String, Object> nested = new LinkedHashMap<>();
 				children.add(nested);
+				
+				String type = tree.getChild(0).getClass().getSimpleName().replaceAll("Context$", "");
 
-				nested.put("return", tree.getChild(1).getText());			
+				if(type.equals(TERMINAL_NODE_IMPL)) {
+					Token token = ((TerminalNodeImpl) tree.getChild(1)).getSymbol();
+					if(token.getType() == VARIABLE_TYPE) {
+						nested.put("returnType", "Variable");
+					} else if(token.getType() == BOOLEAN_TYPE) {
+						nested.put("returnType", "boolean");
+					}
+				} else {
+					nested.put("returnType", type);
+				}
+				
+				nested.put("returnValue", tree.getChild(1).getText());
+		
 			} else if(name.equals(EXPRESSION_VALUE)) {
 				String nameChild = tree.getChild(0).getClass().getSimpleName().replaceAll("Context$", "");
 				if(nameChild.equals(STRING_LIT)) {
@@ -247,17 +277,11 @@ public class Main {
 								for (int j = 0; j < tree.getChild(i).getChildCount(); j++) {
 									bob.append(tree.getChild(i).getChild(j).getText());
 								}
-								Map<String, Object> nested = new LinkedHashMap<>();
-
-								List<Map<String, Object>> value = new ArrayList<>();
-								Map<String, Object> values = new LinkedHashMap<>();
+								List<Map<String, Object>> value = (List<Map<String, Object>>) map.get(VALUE);
+								Map<String, Object> values = value.get(0);
+								
 								values.put("Value", bob.toString());
-								values.put("Type", nameChild);
-								value.add(values);
-
-								children.add(nested);
-								nested.put("Value", value);
-
+								values.put("valueType", nameChild);
 
 							} else if(nameChild.equals(EXPR)){
 								Map<String, Object> expr_map = new LinkedHashMap<>();
@@ -283,6 +307,18 @@ public class Main {
 									values.put("Variable", tree.getChild(0).getChild(1).getChild(1).getText());
 									values.put("Operator", tree.getChild(0).getChild(1).getChild(2).getText());
 									values.put("Value", tree.getChild(0).getChild(1).getChild(3).getText());
+									String type = tree.getChild(0).getChild(1).getChild(3).getClass().getSimpleName().replaceAll("Context$", "");
+
+									if(type.equals(TERMINAL_NODE_IMPL)) {
+										Token token = ((TerminalNodeImpl) tree.getChild(3).getChild(3)).getSymbol();
+										if(token.getType() == VARIABLE_TYPE) {
+											values.put("Type", "Variable");
+										} else if(token.getType() == BOOLEAN_TYPE) {
+											values.put("Type", "boolean");
+										}
+									} else {
+										values.put("Type", type);
+									}
 
 									refinement.add(values);
 									nested.put("Refinement", refinement);	
@@ -295,7 +331,7 @@ public class Main {
 								List<Map<String, Object>> value = new ArrayList<>();
 								Map<String, Object> values = new LinkedHashMap<>();
 								values.put("Value", tree.getChild(i).getText());
-								values.put("Type", className);
+								values.put("valueType", className);
 								value.add(values);
 
 								Map<String, Object> nested = new LinkedHashMap<>();
@@ -303,6 +339,18 @@ public class Main {
 								nested.put("Value", value);
 							}
 
+						} else {
+							List<Map<String, Object>> value = (List<Map<String, Object>>) map.get(VALUE);
+							Map<String, Object> values = value.get(0);
+							
+							Token token = ((TerminalNodeImpl) tree.getChild(i)).getSymbol();
+							if(token.getType() == VARIABLE_TYPE) {
+								values.put("valueType", "Variable");
+								values.put("Value", tree.getChild(i).getText());
+							} else if(token.getType() == BOOLEAN_TYPE) {
+								values.put("valueType", "boolean");
+								values.put("Value", tree.getChild(i).getText());
+							}			
 						}
 					} else {
 						Map<String, Object> nested = new LinkedHashMap<>();
