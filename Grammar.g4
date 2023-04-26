@@ -42,7 +42,7 @@ type:
 ;
 
 refinement:
-	WHERE (VARIABLE) operator (number|string_lit|TRUE|FALSE)
+	WHERE (VARIABLE) operator (number|string_lit|TRUE|FALSE|VARIABLE)
 ;
 
 number:
@@ -102,7 +102,7 @@ function_call:
 ;
 
 return_statement:
-	RETURN (VARIABLE|number|string_lit|TRUE|FALSE) SEMICOLON comment*?
+	RETURN ((VARIABLE|number|string_lit|TRUE|FALSE))? SEMICOLON comment*?
 ;
 
 definition:
@@ -112,7 +112,7 @@ definition:
 function:
 	vname_type LEFT_PAR args_def? RIGHT_PAR
 	LEFT_BRACKET
-	(statement|function|comment)* return_statement?
+	(statement|function|comment)* return_statement
 	RIGHT_BRAKCET
 ;
 
