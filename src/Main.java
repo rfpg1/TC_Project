@@ -78,15 +78,68 @@ public class Main {
 					GrammarParser parser = new GrammarParser(tokens);
 					parser.setBuildParseTree(true);
 					ParseTree p = parser.prog();
+					Map<String, Object> tree = toMap(p);
 
 					if(treeFlag) {
-						System.out.println(toMap(p));
+						System.out.println(tree);
 					}
-					verify(new Context(), toMap(p));
+					Context c = new Context();
+					addFunctions(c, tree);
+					verify(c, tree);
 				} catch(IOException e) {
 					System.out.println("File " + args[i] + " does not exist");
 				}
 			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void addFunctions(Context context, Map<String, Object> map) throws CompilerException {
+		String first = new ArrayList<>(map.keySet()).get(0);
+		List<Map<String, Object>> prog = (List<Map<String, Object>>) map.get(first);
+		for(Map<String, Object> p: prog) {
+			List<String> setKeys = new ArrayList<>(p.keySet());
+			String type = setKeys.get(0);
+			if(type.equals(STATEMENT) || type.equals(DEFINITION) ||
+					type.equals(IF_STATEMENT) || type.equals(WHILE_STATEMENT) || type.equals(ELSE_STATEMENT)) {
+				addFunctions(context, p);
+			} else if(type.equals(FUNCTION)) {
+				addNameFunction(context, p, type);
+			} else if(type.equals(DECLARATION)) {
+				addNameFunction(context, p, type);
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void addNameFunction(Context context, Map<String, Object> p, String type) throws CompilerException {
+		List<Map<String, Object>> function = (List<Map<String, Object>>) p.get(type);
+		Map<String, Object> f = (Map<String, Object>) function.get(0);
+		List<Map<String, Object>> vnameType = (List<Map<String, Object>>) f.get(VNAME_TYPE);
+		String name = (String) vnameType.get(0).get("name");
+		if(!context.hasFunction(name)) {
+			String returnType = (String) vnameType.get(0).get("type");
+			List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
+			List<String> argsType = new ArrayList<>();
+			List<String> argsName = new ArrayList<>();
+			List<Boolean> argsArray = new ArrayList<>();
+			if(argsDef != null) {
+				for(Map<String, Object> arg : argsDef) {
+					List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
+					String argType = (String) argNameType.get(0).get("type");
+					argsType.add(argType);
+					String argName = (String) argNameType.get(0).get("name");
+					argsName.add(argName);
+					boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
+					argsArray.add(argArray);
+				}
+			}
+			context.setFunction(name, new Pair<String, List<String>>(returnType, argsType));
+		} else {
+			throw new FunctionException("Function with name " + name + " already exists");
+		}
+		if(type.equals(FUNCTION)) {
+			addFunctions(context, p);
 		}
 	}
 
@@ -597,7 +650,7 @@ public class Main {
 				Map<String, Object> nested = new LinkedHashMap<>();
 				children.add(nested);
 
-				String type = tree.getChild(0).getClass().getSimpleName().replaceAll("Context$", "");
+				String type = tree.getChild(1).getClass().getSimpleName().replaceAll("Context$", "");
 
 				if(type.equals(TERMINAL_NODE_IMPL)) {
 					Token token = ((TerminalNodeImpl) tree.getChild(1)).getSymbol();
@@ -607,7 +660,15 @@ public class Main {
 						nested.put("returnType", BOOLEAN);
 					}
 				} else {
-					nested.put("returnType", type);
+					if(type.equals(NUMBER)) {
+						if(tree.getChild(1).getText().contains(".")) {
+							nested.put("returnType", DOUBLE);
+						} else {
+							nested.put("returnType", INT);
+						}
+					} else {
+						nested.put("returnType", STRING);
+					}
 				}
 
 				nested.put("returnValue", tree.getChild(1).getText());
@@ -650,7 +711,19 @@ public class Main {
 						String value = tree.getChild(2).getChild(j).getText();
 						Map<String, String> p = new LinkedHashMap<>();
 						if(!(tree.getChild(2).getChild(j) instanceof TerminalNodeImpl)) {
-							p.put("pType", nameChild);
+							if(nameChild.equals(NUMBER)) {
+								if(value.contains(".")) {
+									p.put("pType", DOUBLE);
+								} else {
+									p.put("pType", INT);
+								}
+							} else {
+								if(nameChild.equals(STRING_LIT)) {
+									p.put("pType", STRING);
+								} else {
+									p.put("pType", nameChild);
+								}
+							}
 							p.put("pValue", value);
 							parameters.add(p);
 						} else {
@@ -933,37 +1006,32 @@ public class Main {
 		Map<String, Object> f = (Map<String, Object>) function.get(0);
 		List<Map<String, Object>> vnameType = (List<Map<String, Object>>) f.get(VNAME_TYPE);
 		String name = (String) vnameType.get(0).get("name");
-		if(!context.hasFunction(name)) {
-			String returnType = (String) vnameType.get(0).get("type");
-			List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
-			List<String> argsType = new ArrayList<>();
-			List<String> argsName = new ArrayList<>();
-			List<Boolean> argsArray = new ArrayList<>();
-			if(argsDef != null) {
-				for(Map<String, Object> arg : argsDef) {
-					List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
-					String argType = (String) argNameType.get(0).get("type");
-					argsType.add(argType);
-					String argName = (String) argNameType.get(0).get("name");
-					argsName.add(argName);
-					boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
-					argsArray.add(argArray);
-				}
-			}
-			context.setFunction(name, new Pair<String, List<String>>(returnType, argsType));
 
-			if(type.equals(FUNCTION)) {
-				context.setCurrentFunction(name);
-				for(int i = 0; i < argsType.size(); i++ ) {
-					context.setType(argsName.get(i), argsType.get(i), argsArray.get(i));
-				}
-				context.enterScope();
-				verify(context, p);
-				context.exitScope();
-				context.setCurrentFunction(null);
-			}	
-		} else {
-			throw new FunctionException("Function with name " + name + " already exists");
+		List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
+		List<String> argsType = new ArrayList<>();
+		List<String> argsName = new ArrayList<>();
+		List<Boolean> argsArray = new ArrayList<>();
+		if(argsDef != null) {
+			for(Map<String, Object> arg : argsDef) {
+				List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
+				String argType = (String) argNameType.get(0).get("type");
+				argsType.add(argType);
+				String argName = (String) argNameType.get(0).get("name");
+				argsName.add(argName);
+				boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
+				argsArray.add(argArray);
+			}
 		}
+
+		if(type.equals(FUNCTION)) {
+			context.setCurrentFunction(name);
+			for(int i = 0; i < argsType.size(); i++ ) {
+				context.setType(argsName.get(i), argsType.get(i), argsArray.get(i));
+			}
+			context.enterScope();
+			verify(context, p);
+			context.exitScope();
+			context.setCurrentFunction(null);
+		}	
 	}
 }
