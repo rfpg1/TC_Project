@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import utils.Pair;
+
 public class Context {
 
 	private Stack<Map<String, Object>> stack;
@@ -30,9 +32,9 @@ public class Context {
 		return null;
 	}
 	
-	public void setType(String name, Object o) {
+	public void setType(String name, Object o, boolean array) {
 		Map<String, Object> scope = stack.get(head);
-		scope.put(name, o);
+		scope.put(name, new Pair<Object, Boolean>(o, array));
 	}
 	
 	public Object getFunction(String functionName) {
@@ -90,5 +92,11 @@ public class Context {
 	
 	public String getCurrentFunction() {
 		return this.definitions.get(this.definitions.size() - 1);
+	}
+
+	@SuppressWarnings("unchecked")
+	public boolean isArray(String vName) {
+		Pair<String, Object> a = (Pair<String, Object>) this.getType(vName);
+		return (Boolean)a.getSecond();
 	}
 }

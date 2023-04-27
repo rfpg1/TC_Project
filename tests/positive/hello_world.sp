@@ -1,6 +1,7 @@
 (*2<++d 
 wada   á*)
-main:Int(a:String, b:Double){
+a:Int = 2;
+main:Int[](a:String[], b:Double){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
 	abs:Int where abs > 0 (val:Int)  ;
@@ -24,7 +25,8 @@ main:Int(a:String, b:Double){
 	a;
 	main("a", 4);
 	max(3,2);
-	pi3.get_array()[pi2+1*2];
+	sample_normal(2,3);
+	a.get_array()[pi2+1*2];
 	a[1];
 	return pi2;
 }

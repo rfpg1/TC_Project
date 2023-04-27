@@ -138,6 +138,9 @@ public class Main {
 		if(vName != null && context.getType(vName) == null) {
 			throw new VariableException("Variable " + vName  + " doesnt exist");
 		}
+		if(vName != null && !context.isArray(vName)) {
+			throw new VariableException("Variable " + vName + " isn't an array");
+		}
 		List<Map<String, Object>> positions = (List<Map<String, Object>>)p.get(POSITION);
 		for(Map<String, Object> pos : positions) {
 			List<Map<String, Object>> listPositions = (List<Map<String, Object>>) pos.get(POS);
@@ -146,7 +149,7 @@ public class Main {
 				String pType = (String) pValues.get("Type");
 				if(pType.equals(VARIABLE)) {
 					String pName = (String) pValues.get("Value");
-					String definedType = (String) context.getType(pName);
+					String definedType = ((Pair<String, Boolean>) context.getType(pName)).getFirst();
 					if(definedType == null) {
 						throw new VariableException("Variable " + pName + " doesn't exist");
 					}
@@ -245,7 +248,7 @@ public class Main {
 			if(!expectedReturn.equals(rType)) {
 				if(rType.equals(VARIABLE)) {
 					String name = (String) rTypeValue.get("returnValue");
-					String varType = (String) context.getType(name);
+					String varType = ((Pair<String, Boolean>) context.getType(name)).getFirst();
 					if(varType == null) {
 						throw new VariableException("Variable " + name + " does not exist");
 					}
@@ -286,7 +289,7 @@ public class Main {
 				String value = (String) c.get(0).get(COND_VALUE);
 				String bType = (String) c.get(0).get("Type");
 				if(bType.equals(VARIABLE)) {
-					bType = (String) context.getType(value);
+					bType = ((Pair<String, Boolean>) context.getType(value)).getFirst();
 				}
 				if(currentType == null) {
 					currentType = bType;
@@ -349,7 +352,7 @@ public class Main {
 
 		if(type == null) {
 			if(context.hasVar(name)) {
-				String varCurrentType = (String) context.getType(name);
+				String varCurrentType = ((Pair<String, Boolean>) context.getType(name)).getFirst();
 				String valueType = (String) statementValue.get("valueType");
 				if(valueType == null) { //EXPR
 					List<Map<String, Object>> temp = (List<Map<String, Object>>) p.get(VALUE);
@@ -431,7 +434,7 @@ public class Main {
 						String exprType = (String) valuesType.get(0).get("Type");
 						if(exprType.equals(VARIABLE)) {
 							String exprName = (String) valuesType.get(0).get(VALUE);
-							exprType = (String) context.getType(exprName);
+							exprType = ((Pair<String, Boolean>) context.getType(exprName)).getFirst();
 						}
 						if(currentType == null) {
 							currentType = exprType;
@@ -467,14 +470,17 @@ public class Main {
 						throw new VariableException("Expected " + type +" and expression type is " + currentType);
 					}
 				}
-				context.setType(name, currentType);
+				boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+				context.setType(name, currentType, array);
 			} else if(type.equals(valueType)) {
-				context.setType(name, type);
+				boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+				context.setType(name, type, array);
 			} else if(valueType.equals(STRING_LIT)) {
 				if(!type.substring(0, 5).equals(valueType.substring(0, 5))) {
 					throw new TypeException("Expecting " + type + " and got " + valueType);
 				} else {
-					context.setType(name, type);
+					boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+					context.setType(name, type, array);
 				}
 			} else if(valueType.equals(NUMBER)) {
 				String value = (String) statementValue.get(VALUE);
@@ -482,10 +488,12 @@ public class Main {
 					if(!type.equals(DOUBLE) && !type.equals(FLOAT)) {
 						throw new VariableException("Expecting " + type + " and got " + DOUBLE);
 					} else {
-						context.setType(name, type);
+						boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+						context.setType(name, type, array);
 					}
 				} else {
-					context.setType(name, type);
+					boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+					context.setType(name, type, array);
 				}
 			} else if(valueType.equals(BOOLEAN)) {
 				if(!type.equals(valueType)) {
@@ -500,10 +508,12 @@ public class Main {
 							if(!type.substring(0, 5).equals(varType.substring(0, 5))) {
 								throw new TypeException("Expecting " + type + " and got " + valueType);
 							} else {
-								context.setType(name, type);
+								boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+								context.setType(name, type, array);
 							}
 						} else if(type.equals(varType)) {
-							context.setType(name, type);
+							boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
+							context.setType(name, type, array);
 						} else {
 							throw new VariableException("Variable " + name + 
 									" was assigned to be equal to a varialbe that as a type " 
@@ -553,6 +563,11 @@ public class Main {
 
 				nested.put("name", tree.getChild(0).getText());
 				nested.put("type", tree.getChild(2).getChild(0).getText());
+				if(tree.getChild(2).getChildCount() > 1) {
+					nested.put("Array", "true");
+				} else {
+					nested.put("Array", "false");
+				}
 				if(tree.getChildCount() > 2) {
 					if(tree.getChild(3) != null) {
 						List<Map<String, Object>> refinement = new ArrayList<>();
@@ -862,6 +877,11 @@ public class Main {
 								nested.put("name", tree.getChild(i).getChild(0).getText());
 								if(tree.getChild(0).getChildCount() > 2) {
 									nested.put("type", tree.getChild(0).getChild(2).getText());
+									if(tree.getChild(0).getChild(2).getChildCount() > 1) {
+										nested.put("Array", "true");
+									} else {
+										nested.put("Array", "false");
+									}
 								}
 
 							} else {
@@ -918,6 +938,7 @@ public class Main {
 			List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
 			List<String> argsType = new ArrayList<>();
 			List<String> argsName = new ArrayList<>();
+			List<Boolean> argsArray = new ArrayList<>();
 			if(argsDef != null) {
 				for(Map<String, Object> arg : argsDef) {
 					List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
@@ -925,6 +946,8 @@ public class Main {
 					argsType.add(argType);
 					String argName = (String) argNameType.get(0).get("name");
 					argsName.add(argName);
+					boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
+					argsArray.add(argArray);
 				}
 			}
 			context.setFunction(name, new Pair<String, List<String>>(returnType, argsType));
@@ -932,7 +955,7 @@ public class Main {
 			if(type.equals(FUNCTION)) {
 				context.setCurrentFunction(name);
 				for(int i = 0; i < argsType.size(); i++ ) {
-					context.setType(argsName.get(i), argsType.get(i));
+					context.setType(argsName.get(i), argsType.get(i), argsArray.get(i));
 				}
 				context.enterScope();
 				verify(context, p);
