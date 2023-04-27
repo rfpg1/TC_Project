@@ -172,7 +172,7 @@ public class Main {
 								throw new VariableException("Variable " + varName + " doesn't exist");
 							} else {
 								if(!varType.equals(INT)) {
-									throw new PositionInvalidException("Position has to be an int");
+									throw new PositionInvalidException("Position has to be an int not a " + varType);
 								}
 							}
 						}

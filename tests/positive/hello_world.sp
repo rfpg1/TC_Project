@@ -25,6 +25,6 @@ main:Int(a:String, b:Double){
 	main("a", 4);
 	max(3,2);
 	pi3.get_array()[pi2+1*2];
-	a[a];
+	a[1];
 	return pi2;
 }
