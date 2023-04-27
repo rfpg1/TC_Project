@@ -1,4 +1,5 @@
 (***** Testing definitions ******* )
+d:String = "a";
 max:Int (a:Int, b:Int) {
   if a > b {
     return a;
@@ -6,12 +7,19 @@ max:Int (a:Int, b:Int) {
   return b;
 }
 (* Multiple functions defined *)
-max:Int (a:Int, b:Int) {
+min:Int (a:Int, b:Int) {
+  c:Int = 3;
+  d:Int = 2;
   if a > b {
     return a;
   }
-  while (b>c) {
+  while (b>a) {
   	a = 1;
+  	b = 2;
   }
+  d = c;
+  
   return b;
 }
+
+e:String = d;

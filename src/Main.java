@@ -64,7 +64,8 @@ public class Main {
 	private static final int BOOLEAN_TYPE = 8;
 	private static final int NOT_OPERATOR_TYPE = 32;
 	private static final int NUMBER_INT_TYPE = 28;
-	private static final String[] mathOperator = {"<", ">", ">=", "<=", "==", "!=", "*", "+", "-", "/", "%"};
+	private static final String[] MATH_OPERATOR = {"*", "+", "-", "/", "%"};
+	private static final String[] BOOLEAN_OPERATOR = {"&&", "||"};
 
 	public static void main(String[] args) throws IOException, CompilerException {
 		boolean treeFlag = containsFlag(args, "--tree");
@@ -119,21 +120,24 @@ public class Main {
 		String name = (String) vnameType.get(0).get("name");
 		if(!context.hasFunction(name)) {
 			String returnType = (String) vnameType.get(0).get("type");
-			List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
 			List<String> argsType = new ArrayList<>();
-			List<String> argsName = new ArrayList<>();
-			List<Boolean> argsArray = new ArrayList<>();
-			if(argsDef != null) {
-				for(Map<String, Object> arg : argsDef) {
-					List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
-					String argType = (String) argNameType.get(0).get("type");
-					argsType.add(argType);
-					String argName = (String) argNameType.get(0).get("name");
-					argsName.add(argName);
-					boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
-					argsArray.add(argArray);
+			if(function.size() > 1) {
+				List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
+				List<String> argsName = new ArrayList<>();
+				List<Boolean> argsArray = new ArrayList<>();
+				if(argsDef != null) {
+					for(Map<String, Object> arg : argsDef) {
+						List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
+						String argType = (String) argNameType.get(0).get("type");
+						argsType.add(argType);
+						String argName = (String) argNameType.get(0).get("name");
+						argsName.add(argName);
+						boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
+						argsArray.add(argArray);
+					}
 				}
 			}
+			
 			context.setFunction(name, new Pair<String, List<String>>(returnType, argsType));
 		} else {
 			throw new FunctionException("Function with name " + name + " already exists");
@@ -202,10 +206,12 @@ public class Main {
 				String pType = (String) pValues.get("Type");
 				if(pType.equals(VARIABLE)) {
 					String pName = (String) pValues.get("Value");
-					String definedType = ((Pair<String, Boolean>) context.getType(pName)).getFirst();
-					if(definedType == null) {
+					Pair<String, Boolean> pair = (Pair<String, Boolean>) context.getType(pName);
+					if(pair == null) {
 						throw new VariableException("Variable " + pName + " doesn't exist");
 					}
+					String definedType = pair.getFirst();
+					
 					if(!definedType.equals(INT)) {
 						throw new PositionInvalidException("Position has to be an int");
 					}
@@ -223,7 +229,11 @@ public class Main {
 					if(type != null) {
 						if(type.equals(VARIABLE)) {
 							String varName = (String) pos.get(VALUE);
-							String varType = (String) context.getType(varName);
+							Pair<String, List<String>> pair = (Pair<String, List<String>>) context.getType(varName);
+							if(pair == null) {
+								throw new VariableException("Variable " + varName + " doesn't exist");
+							}
+							String varType = pair.getFirst();
 							if(varType == null) {
 								throw new VariableException("Variable " + varName + " doesn't exist");
 							} else {
@@ -266,6 +276,18 @@ public class Main {
 										+ " expected paramater " + (i+1) + " with type " + expectedPa 
 										+ " and got " + pa);
 							}
+						} else if(pa.equals(VARIABLE)) { 
+							String value = (String) ((Map<String, Object>) parameters.get(i)).get("pValue");
+							Pair<String, Boolean> varType = (Pair<String, Boolean>) context.getType(value);
+							if(varType == null) {
+								throw new VariableException("Variable " + value + " doesn't exist");
+							} else {
+								if(!expectedPa.equals(varType.getFirst())) {
+									throw new FunctionException("Function with name " + fname 
+											+ " expected paramater " + (i+1) + " with type " + expectedPa 
+											+ " and got " + varType);
+								}
+							}
 						} else {
 							throw new FunctionException("Function with name " + fname 
 									+ " expected paramater " + (i+1) + " with type " + expectedPa 
@@ -282,7 +304,8 @@ public class Main {
 	@SuppressWarnings("unchecked")
 	private static void checkStatementValue(Context context, Map<String, Object> p) throws CompilerException {
 		Map<String, Object> statementeValue = ((List<Map<String, Object>>) p.get(STATEMENT_VALUE)).get(0);
-		if(statementeValue.get("Type").equals(VARIABLE)) {
+		String type = (String) statementeValue.get("Type");
+		if(type != null && type.equals(VARIABLE)) {
 			String name = (String) statementeValue.get(VALUE);
 			if(context.getType(name) == null) {
 				throw new VariableException("Variable " + name + " does not exist");
@@ -336,13 +359,18 @@ public class Main {
 		//List<Map<String, Object>> bExpression = (List<Map<String, Object>>) p.get(type);
 		List<Map<String, Object>> values = (List<Map<String, Object>>) p.get(BOOLEAN_EXPRESSION);
 		String currentType = current;
+		boolean mFound = false;
 		for(Map<String, Object> condValues : values) {
 			List<Map<String, Object>> c = (List<Map<String, Object>>) condValues.get(CONDITIONAL_VALUES);
 			if(c != null) {
 				String value = (String) c.get(0).get(COND_VALUE);
 				String bType = (String) c.get(0).get("Type");
 				if(bType.equals(VARIABLE)) {
-					bType = ((Pair<String, Boolean>) context.getType(value)).getFirst();
+					Pair<String, Boolean> pair = (Pair<String, Boolean>) context.getType(value);
+					if(pair == null) {
+						throw new VariableException("Variable with name " + value + " doesnt' exist");
+					}
+					bType = pair.getFirst();
 				}
 				if(currentType == null) {
 					currentType = bType;
@@ -360,12 +388,14 @@ public class Main {
 					//OPERATOR 
 					Map<String, Object> op = opList.get(0);
 					if(isMathOperator((String)op.get("operator")) ) {
-						if(!currentType.equals(INT) && !currentType.equals(DOUBLE) && !currentType.equals(FLOAT)) {
+						if(currentType != null && !currentType.equals(INT) && !currentType.equals(DOUBLE) && !currentType.equals(FLOAT)) {
 							throw new VariableException("Can't do math operations with type " + currentType);
 						}
-					} else {
+					} else if(isBooleanOperator((String)op.get("operator"))) {
 						currentType = null;
 
+					} else {
+						mFound = !mFound;
 					}
 				} else {
 					//BOOLEAN EXPR
@@ -385,11 +415,22 @@ public class Main {
 
 			}
 		}
+		if(!mFound && currentType != null && !currentType.equals(BOOLEAN)) {
+			throw new VariableException(currentType + " can't be evaluated as a boolean expression");
+		}
+	}
 
+	private static boolean isBooleanOperator(String op) {
+		for(String s : BOOLEAN_OPERATOR) {
+			if(s.equals(op)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean isMathOperator(String op) {
-		for(String s : mathOperator) {
+		for(String s : MATH_OPERATOR) {
 			if(s.equals(op)) {
 				return true;
 			}
@@ -529,8 +570,11 @@ public class Main {
 				boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
 				context.setType(name, type, array);
 			} else if(valueType.equals(STRING_LIT)) {
+				if(type.length() < 5) {
+					throw new TypeException("Expecting " + type + " and got " + STRING);
+				}
 				if(!type.substring(0, 5).equals(valueType.substring(0, 5))) {
-					throw new TypeException("Expecting " + type + " and got " + valueType);
+					throw new TypeException("Expecting " + type + " and got " + STRING);
 				} else {
 					boolean array = Boolean.parseBoolean((String)statementValue.get("Array"));
 					context.setType(name, type, array);
@@ -556,7 +600,7 @@ public class Main {
 				if(valueType.equals(VARIABLE)) {
 					String varName = (String) statementValue.get("Value");
 					if(context.hasVar(varName)) {
-						String varType = (String) context.getType(varName);
+						String varType = ((Pair<String, List<String>>) context.getType(varName)).getFirst();
 						if((type.equals(STRING_LIT) || varType.equals(STRING_LIT))) {
 							if(!type.substring(0, 5).equals(varType.substring(0, 5))) {
 								throw new TypeException("Expecting " + type + " and got " + valueType);
@@ -1006,22 +1050,24 @@ public class Main {
 		Map<String, Object> f = (Map<String, Object>) function.get(0);
 		List<Map<String, Object>> vnameType = (List<Map<String, Object>>) f.get(VNAME_TYPE);
 		String name = (String) vnameType.get(0).get("name");
-
-		List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
 		List<String> argsType = new ArrayList<>();
 		List<String> argsName = new ArrayList<>();
 		List<Boolean> argsArray = new ArrayList<>();
-		if(argsDef != null) {
-			for(Map<String, Object> arg : argsDef) {
-				List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
-				String argType = (String) argNameType.get(0).get("type");
-				argsType.add(argType);
-				String argName = (String) argNameType.get(0).get("name");
-				argsName.add(argName);
-				boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
-				argsArray.add(argArray);
+		if(function.size() > 1) {
+			List<Map<String, Object>> argsDef = (List<Map<String, Object>>) function.get(1).get(ARGS_DEF);
+			if(argsDef != null) {
+				for(Map<String, Object> arg : argsDef) {
+					List<Map<String, Object>> argNameType = (List<Map<String, Object>>) arg.get(VNAME_TYPE);
+					String argType = (String) argNameType.get(0).get("type");
+					argsType.add(argType);
+					String argName = (String) argNameType.get(0).get("name");
+					argsName.add(argName);
+					boolean argArray = Boolean.parseBoolean(((String) argNameType.get(0).get("Array")));
+					argsArray.add(argArray);
+				}
 			}
 		}
+		
 
 		if(type.equals(FUNCTION)) {
 			context.setCurrentFunction(name);

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import exception.CompilerException;
+import exception.InvalidReturnException;
 import utils.Pair;
 
 public class Context {
@@ -90,7 +92,10 @@ public class Context {
 		}
 	}	
 	
-	public String getCurrentFunction() {
+	public String getCurrentFunction() throws CompilerException {
+		if(this.definitions.size() < 1) {
+			throw new InvalidReturnException("Trying to return without declaring a function");
+		}
 		return this.definitions.get(this.definitions.size() - 1);
 	}
 

@@ -1,2 +1,3 @@
 (* Testing wrong name for variable *)
-2pi:String = i;
+3pi:Int = 2;
+(* pi3:Int = pi; *)

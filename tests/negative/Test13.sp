@@ -1,2 +1,2 @@
-(* Testing arrays *)
-get_array()(i+1);
+(* Calling unexisting function *)
+f(3);

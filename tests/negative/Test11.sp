@@ -1,4 +1,4 @@
 (* Testing while *)
-while true && {
+while !true && {
 
 }

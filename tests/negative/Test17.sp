@@ -1,2 +1,5 @@
-(* Testing wrong value for variables *)
-pi:String = i 1;
+(* Testing arrays *)
+max:Int(a:Int[]){
+	a[i];
+	return 2;
+}

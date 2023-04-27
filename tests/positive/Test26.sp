@@ -1,4 +1,7 @@
 (***** Testing if ******* )
-if true    && false || true > 2 < true {
+if true    && false || 3 > 4 {
 			(* TESTE *)
+			if 2 > 2 {
+					_ola:Int = 3; 
+				}
 } 

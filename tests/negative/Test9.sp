@@ -1,4 +1,2 @@
-(* Testing else *)
-else true && {
-
-}
+(* Wrong type of variable *)
+pi:Double = "a";

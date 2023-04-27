@@ -1,2 +1,6 @@
-(* Testing missing double points *)
-sample_normal:Double(mean Double");
+(* Testing arrays *)
+max:Int(a:Int[]){
+	i:Int = 2;
+	a.get_array()[i + 3 + c];
+	return 2;
+}

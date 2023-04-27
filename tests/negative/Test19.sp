@@ -1,2 +1,8 @@
-(* Testing missing double points *)
-sample_normal Double(mean:Double");
+(* Same function definition *)
+f:Void() {
+	return ;
+}
+
+f:Int() {
+	return 2;
+}

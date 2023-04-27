@@ -1,3 +1,7 @@
-(* Testing extra comma on function call *)
+(* Testing call function with wrong types *)
 
-f(3,      );
+f(2);
+
+f:Int(a:String) {
+	return 2;
+}

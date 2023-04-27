@@ -2,7 +2,7 @@
 grammar Grammar;
 
 /* non-terminals start with lowercase */
-prog: (comment|declaration|definition|statement)*;
+prog: (comment|declaration|definition|statement)*EOF;
 
 comment:
 	LEFT_PAR STAR (ANYCHAR|VARIABLE|number|operator|reserved_words)* STAR RIGHT_PAR
@@ -132,17 +132,11 @@ while_statement:
 
 boolean_expression:
 	(LEFT_PAR boolean_expression RIGHT_PAR
-	|conditions_values_single
+	| conditions_values 
 	| conditions_values operator conditions_values
-	| (conditions_values operator conditions_values operator boolean_expression)
+	| conditions_values operator conditions_values operator boolean_expression
 	)
 ;
-conditions_values_single:
-	VARIABLE
-	| TRUE
-	| FALSE
-;
-
 
 conditions_values:
 	VARIABLE
@@ -156,7 +150,7 @@ args_def:
 ;
 
 args_value:
-	(number|string_lit|TRUE|FALSE) (COMMA (number|string_lit|TRUE|FALSE))*
+	(number|string_lit|TRUE|FALSE|VARIABLE) (COMMA (number|string_lit|TRUE|FALSE|VARIABLE))*
 ;
 
 operator:
