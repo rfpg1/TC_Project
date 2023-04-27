@@ -38,7 +38,7 @@ vname_type:
 ;
 
 type:
-	(DOUBLE|INT|BOOLEAN|FLOAT|STRING)(LEFT_R RIGHT_R)?
+	(DOUBLE|INT|BOOLEAN|FLOAT|STRING|VOID)(LEFT_R RIGHT_R)?
 ;
 
 refinement:
@@ -164,6 +164,7 @@ operator:
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
+VOID:'Void';
 DOUBLE: 'Double';
 INT: 'Int';
 BOOLEAN: 'Boolean';

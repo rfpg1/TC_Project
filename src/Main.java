@@ -12,7 +12,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import exception.CompilerException;
-import exception.FunctionAlreadyExistsException;
+import exception.FunctionException;
+import exception.PositionInvalidException;
 import exception.TypeException;
 import exception.VariableException;
 import utils.Pair;
@@ -55,12 +56,14 @@ public class Main {
 	private static final String FLOAT = "Float";
 	private static final String CONDITIONS_VALUES_SINGLE = "Conditions_values_single";
 	private static final String VOID = "Void";
+	private static final String STATEMENT_VALUE = "Statement_value";
 
 
 
-	private static final int VARIABLE_TYPE = 34;
-	private static final int BOOLEAN_TYPE = 7;
-	private static final int NOT_OPERATOR_TYPE = 31;
+	private static final int VARIABLE_TYPE = 35;
+	private static final int BOOLEAN_TYPE = 8;
+	private static final int NOT_OPERATOR_TYPE = 32;
+	private static final int NUMBER_INT_TYPE = 28;
 	private static final String[] mathOperator = {"<", ">", ">=", "<=", "==", "!=", "*", "+", "-", "/", "%"};
 
 	public static void main(String[] args) throws IOException, CompilerException {
@@ -94,7 +97,7 @@ public class Main {
 		for(Map<String, Object> p: prog) {
 			List<String> setKeys = new ArrayList<>(p.keySet());
 			String type = setKeys.get(0);
-			if(type.equals(STATEMENT)) {
+			if(type.equals(STATEMENT) || type.equals(EXPRESSION)) {
 				verify(context, p);
 			} else if(type.equals(DEFINITION)) {
 				context.enterScope();
@@ -119,8 +122,117 @@ public class Main {
 				context.exitScope();
 			} else if(type.equals(RETURN_STATEMENT)) {
 				checkReturn(context, p);
+			} else if(type.equals(STATEMENT_VALUE)) {
+				checkStatementValue(context, p);
+			} else if(type.equals(FUNCTION_CALL)) {
+				checkFunctionCall(context, p);
+			} else if(type.equals(ARRAYS)) {
+				checkIndexArrays(context, (Map<String, Object>) p.get(ARRAYS));
 			}
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void checkIndexArrays(Context context, Map<String, Object> p) throws CompilerException {
+		String vName = (String) p.get(VARIABLE);
+		if(vName != null && context.getType(vName) == null) {
+			throw new VariableException("Variable " + vName  + " doesnt exist");
+		}
+		List<Map<String, Object>> positions = (List<Map<String, Object>>)p.get(POSITION);
+		for(Map<String, Object> pos : positions) {
+			List<Map<String, Object>> listPositions = (List<Map<String, Object>>) pos.get(POS);
+			if(listPositions != null) {
+				Map<String, Object> pValues = listPositions.get(0);
+				String pType = (String) pValues.get("Type");
+				if(pType.equals(VARIABLE)) {
+					String pName = (String) pValues.get("Value");
+					String definedType = (String) context.getType(pName);
+					if(definedType == null) {
+						throw new VariableException("Variable " + pName + " doesn't exist");
+					}
+					if(!definedType.equals(INT)) {
+						throw new PositionInvalidException("Position has to be an int");
+					}
+				} else {
+					if(!pType.equals(INT)) {
+						throw new PositionInvalidException("Position has to be an int");
+					}
+				}
+			} else {
+				List<Map<String, Object>> lPosition = (List<Map<String, Object>>) pos.get(POSITION);
+				if(lPosition != null) {
+					checkIndexArrays(context, pos);
+				} else {
+					String type = (String) pos.get("Type");
+					if(type != null) {
+						if(type.equals(VARIABLE)) {
+							String varName = (String) pos.get(VALUE);
+							String varType = (String) context.getType(varName);
+							if(varType == null) {
+								throw new VariableException("Variable " + varName + " doesn't exist");
+							} else {
+								if(!varType.equals(INT)) {
+									throw new PositionInvalidException("Position has to be an int");
+								}
+							}
+						}
+					}
+				}
+			}
+		}	
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void checkFunctionCall(Context context, Map<String, Object> p) throws CompilerException {
+		Map<String, Object> function = ((List<Map<String, Object>>) p.get(FUNCTION_CALL)).get(0);
+		String fname = (String) function.get("function_name");
+		if(context.hasFunction(fname)) {
+			List<Map<String, Object>> parameters = (List<Map<String, Object>>) function.get("parameters");
+			List<String> expectedParameters = ((Pair<String, List<String>>) context.getFunction(fname)).getSecond();
+			if(parameters.size() != expectedParameters.size()) {
+				throw new FunctionException("Function is receiving incorrect number of parameters");
+			} else {
+				for(int i = 0; i < parameters.size(); i++) {
+					String pa = (String) ((Map<String, Object>) parameters.get(i)).get("pType");
+					String expectedPa = expectedParameters.get(i);
+					if(!pa.equals(expectedPa)) {
+						if(pa.equals(NUMBER)) {
+							String value = (String) ((Map<String, Object>) parameters.get(i)).get("pValue");
+							if(value.contains(".") && expectedPa.equals(INT)) {
+								throw new FunctionException("Function with name " + fname 
+										+ " expected paramater " + (i+1) + " with type " + expectedPa 
+										+ " and got " + DOUBLE);
+
+							}
+						} else if(pa.equals(STRING_LIT)) {
+							if(!expectedPa.equals(STRING)) {
+								throw new FunctionException("Function with name " + fname 
+										+ " expected paramater " + (i+1) + " with type " + expectedPa 
+										+ " and got " + pa);
+							}
+						} else {
+							throw new FunctionException("Function with name " + fname 
+									+ " expected paramater " + (i+1) + " with type " + expectedPa 
+									+ " and got " + pa);
+						}
+					}
+				}
+			}
+		} else {
+			throw new FunctionException("Function with name " + fname + " does not exist");
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void checkStatementValue(Context context, Map<String, Object> p) throws CompilerException {
+		Map<String, Object> statementeValue = ((List<Map<String, Object>>) p.get(STATEMENT_VALUE)).get(0);
+		if(statementeValue.get("Type").equals(VARIABLE)) {
+			String name = (String) statementeValue.get(VALUE);
+			if(context.getType(name) == null) {
+				throw new VariableException("Variable " + name + " does not exist");
+			}
+		}
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -161,6 +273,7 @@ public class Main {
 		}
 		return false;
 	}
+
 
 	@SuppressWarnings("unchecked")
 	private static void checkConditionValue(Context context, Map<String, Object> p, String current) throws CompilerException {
@@ -518,14 +631,26 @@ public class Main {
 				List<Map<String, String>> parameters = new ArrayList<>();
 				if(tree.getChildCount() > 4) {
 					for(int j = 0; j < tree.getChild(2).getChildCount(); j++) {
+						String nameChild = tree.getChild(2).getChild(j).getClass().getSimpleName().replaceAll("Context$", "");
+						String value = tree.getChild(2).getChild(j).getText();
+						Map<String, String> p = new LinkedHashMap<>();
 						if(!(tree.getChild(2).getChild(j) instanceof TerminalNodeImpl)) {
-							Map<String, String> p = new LinkedHashMap<>();
-							String nameChild = tree.getChild(2).getChild(j).getClass().getSimpleName().replaceAll("Context$", "");
-							String value = tree.getChild(2).getChild(j).getText();
-							p.put("type", nameChild);
-							p.put("value", value);
+							p.put("pType", nameChild);
+							p.put("pValue", value);
 							parameters.add(p);
-						}						
+						} else {
+							Token token = ((TerminalNodeImpl) tree.getChild(2).getChild(j)).getSymbol();
+							if(token.getType() == VARIABLE_TYPE) {
+								p.put("pType", VARIABLE);
+								p.put("pValue", value);
+								parameters.add(p);
+							} else if(token.getType() == BOOLEAN_TYPE || token.getType() == BOOLEAN_TYPE + 1) {
+								p.put("pType", BOOLEAN);
+								p.put("pValue", value);
+								parameters.add(p);
+							}
+
+						}
 					}
 
 				}
@@ -534,7 +659,20 @@ public class Main {
 				function.add(values);
 				map.put(FUNCTION_CALL, function);
 			} else if(name.equals(EXPRESSION) && !(tree.getChild(0).getClass().getSimpleName().replaceAll("Context$", "").equals(FUNCTION_CALL) )) {
-				map.put("value", tree.getChild(0).getText());
+				List<Map<String, Object>> statementValue = new ArrayList<>();
+				Map<String, Object> values = new LinkedHashMap<>();
+				statementValue.add(values);
+				values.put(VALUE, tree.getChild(0).getText());
+				String childName = tree.getChild(0).getClass().getSimpleName().replaceAll("Context$", "");
+				if(childName.equals(TERMINAL_NODE_IMPL)) {
+					Token token = ((TerminalNodeImpl) tree.getChild(0)).getSymbol();
+					if(token.getType() == VARIABLE_TYPE) {
+						values.put("Type", VARIABLE);
+					} else if(token.getType() == BOOLEAN_TYPE || token.getType() == BOOLEAN_TYPE + 1) {
+						values.put("Type", BOOLEAN);
+					}
+				}
+				map.put(STATEMENT_VALUE, statementValue);
 			} else if (name.equals(ARRAYS)) {
 				String varName = tree.getChild(0).getText();
 				int index = -1;
@@ -546,12 +684,43 @@ public class Main {
 				String namedChild = tree.getChild(index).getClass().getSimpleName().replaceAll("Context$", "");
 				if(namedChild.equals(POSITION)) {
 					Map<String, Object> expr_map = new LinkedHashMap<>();
+					List<Map<String, Object>> positions = new ArrayList<>();
+					expr_map.put(namedChild, positions);
 					for(int j = 0; j < tree.getChild(index).getChildCount(); j++) {
 						String nameChildChild = tree.getChild(index).getChild(j).getClass().getSimpleName().replaceAll("Context$", "");
 						if(nameChildChild.equals(POSITION)) {
 							traverse(tree.getChild(index), expr_map);
 						} else {
-							expr_map.put(namedChild, tree.getChild(index).getChild(j).getText());
+							List<Map<String, Object>> pos = new ArrayList<>();
+							Map<String, Object> posValues = new LinkedHashMap<>();
+							pos.add(posValues);
+							List<Map<String, Object>> typeValuePos = new ArrayList<>();
+							posValues.put(nameChildChild, typeValuePos);
+							Map<String, Object> mapTypeValues = new LinkedHashMap<>();
+							typeValuePos.add(mapTypeValues);
+							ParseTree p = tree.getChild(index).getChild(j);
+							String nameP = p.getClass().getSimpleName().replaceAll("Context$", "");
+							if(nameP.equals(TERMINAL_NODE_IMPL)) {
+								Token token = ((TerminalNodeImpl) p).getSymbol();
+								if(token.getType() == VARIABLE_TYPE) {
+									mapTypeValues.put("Type", VARIABLE);
+								} else if(token.getType() == NUMBER_INT_TYPE) {
+									mapTypeValues.put("Type", INT);
+								}
+								mapTypeValues.put(VALUE, p.getText());
+							} else if (nameP.equals(POS)) {
+								String namePP = p.getChild(0).getClass().getSimpleName().replaceAll("Context$", "");
+								if(namePP.equals(TERMINAL_NODE_IMPL)) {
+									Token token = ((TerminalNodeImpl) p.getChild(0)).getSymbol();
+									if(token.getType() == VARIABLE_TYPE) {
+										mapTypeValues.put("Type", VARIABLE);
+									} else if(token.getType() == NUMBER_INT_TYPE) {
+										mapTypeValues.put("Type", INT);
+									}
+									mapTypeValues.put(VALUE, p.getText());
+								}
+								positions.add(mapTypeValues);
+							}
 						}
 					}
 					expr_map.put("Variable", varName);
@@ -559,7 +728,21 @@ public class Main {
 					map.put(name, expr_map);
 				}
 			} else if(name.equals(POS)){
-				map.put(name, tree.getChild(0).getText());
+				List<Map<String, Object>> posValues = new ArrayList<>();
+				Map<String, Object> v = new LinkedHashMap<>();
+				posValues.add(v);
+				if(tree.getChild(0) instanceof TerminalNodeImpl) {
+					Token token = ((TerminalNodeImpl) tree.getChild(0)).getSymbol();
+					if(token.getType() == VARIABLE_TYPE) {
+						v.put("Type", VARIABLE);
+					} else if(token.getType() == BOOLEAN_TYPE || token.getType() == BOOLEAN_TYPE + 1) {
+						v.put("Type", BOOLEAN);
+					} else if(token.getType() == NUMBER_INT_TYPE) {
+						v.put("Type", INT);
+					}
+				}
+				v.put("Value", tree.getChild(0).getText());
+				map.put(name, posValues);
 			} else {
 				map.put(name, children);
 				for (int i = 0; i < tree.getChildCount(); i++) {
@@ -748,13 +931,16 @@ public class Main {
 
 			if(type.equals(FUNCTION)) {
 				context.setCurrentFunction(name);
+				for(int i = 0; i < argsType.size(); i++ ) {
+					context.setType(argsName.get(i), argsType.get(i));
+				}
 				context.enterScope();
 				verify(context, p);
 				context.exitScope();
 				context.setCurrentFunction(null);
 			}	
 		} else {
-			throw new FunctionAlreadyExistsException("Function with name " + name + " already exists");
+			throw new FunctionException("Function with name " + name + " already exists");
 		}
 	}
 }

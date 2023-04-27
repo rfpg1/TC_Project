@@ -1,6 +1,5 @@
 (*2<++d 
 wada   á*)
-a:Float = 2.0;
 main:Int(a:String, b:Double){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
@@ -23,9 +22,9 @@ main:Int(a:String, b:Double){
 		return pi2;
 	}
 	a;
-	f(3,"4");
-	g(3,2);
-	abc.get_array()[i+1*2];
-	a[1];
+	main("a", 4);
+	max(3,2);
+	pi3.get_array()[pi2+1*2];
+	a[a];
 	return pi2;
 }
