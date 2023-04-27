@@ -69,7 +69,7 @@ expr:
 ;
 
 expr_value:
-	(number|string_lit|VARIABLE)
+	(number|VARIABLE)
 ;
 
 vname_type_optional:
