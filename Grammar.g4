@@ -58,7 +58,7 @@ statement:
 ;
 
 value:
-	vname_type_optional EQUALS (number|string_lit|VARIABLE|expr) SEMICOLON
+	vname_type_optional EQUALS (number|string_lit|VARIABLE|expr|TRUE|FALSE) SEMICOLON
 ;
 
 expr:
@@ -73,7 +73,7 @@ expr_value:
 ;
 
 vname_type_optional:
-	(VARIABLE) (DOUBLE_POINTS type)? refinement? /* Nomes das funções não podem começar com números */
+	(VARIABLE) (DOUBLE_POINTS type)? /* Nomes das funções não podem começar com números */
 ;
 
 arrays
@@ -132,11 +132,17 @@ while_statement:
 
 boolean_expression:
 	(LEFT_PAR boolean_expression RIGHT_PAR
-	|conditions_values
+	|conditions_values_single
 	| conditions_values operator conditions_values
 	| (conditions_values operator conditions_values operator boolean_expression)
 	)
 ;
+conditions_values_single:
+	VARIABLE
+	| TRUE
+	| FALSE
+;
+
 
 conditions_values:
 	VARIABLE
