@@ -1,4 +1,4 @@
-(***** Testing definitions ******* )
+(* Testing definitions *)
 d:String = "a";
 max:Int (a:Int, b:Int) {
   if a > b {

@@ -1,2 +1,2 @@
-(***** Testing comments ******* )
-(** Coments work just fine *****)
+(* Testing comments * )
+(* Coments work just fine *)

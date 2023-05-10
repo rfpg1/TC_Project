@@ -73,7 +73,6 @@ boolean_expression:
 	LEFT_PAR boolean_expression RIGHT_PAR
 	| conditions_values 
 	| conditions_values operator boolean_expression
-	//| conditions_values operator conditions_values operator boolean_expression
 ;
 
 conditions_values:
@@ -82,13 +81,13 @@ conditions_values:
 	|FALSE
 	|number
 	|expr
+	|function_call
 ;
 
 expr:
 	LEFT_PAR expr RIGHT_PAR
 	|expr_value
 	|expr_value (MATH_OPERATOR|STAR) expr
-	//|expr_value (MATH_OPERATOR|STAR) expr_value (MATH_OPERATOR|STAR) expr
 ;
 
 expr_value:
@@ -125,7 +124,7 @@ function_call:
 ;
 
 return_statement:
-	RETURN ((VARIABLE|number|string_lit|TRUE|FALSE))? SEMICOLON comment*?
+	RETURN ((VARIABLE|number|string_lit|TRUE|FALSE|expr|function_call))? SEMICOLON comment*?
 ;
 
 definition:

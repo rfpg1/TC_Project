@@ -6,20 +6,21 @@ k:Double = 4.0;
 d:Int = 2*4;
 s:Int = d;
 f:Boolean = true;
-a:Int[] = maxi(2, 2);
-b:Double[] = min(a);
-z:Int[] = min(a);
-main:Int[] where main > 2*4 (a:Int[], b:Double){
+a:Int = maxi(2, 2);
+b:Double = min(a);
+z:Int = min(a);
+main:Int where main > 2*4 (a:Int[], b:Double){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
 	abs:Int where abs > 0 (val:Int)  ;
 	abs(2);
+	pi:Boolean = false;
 	pi1:String = "true\t";
-	pi2:Int[] = min(a);
+	pi2:Int = min(2);
 	pi3:Double = pi2*4*3;
 	pi4:Int = 2;
 	max:Void (a:Int, b:Int) {
-		if !s > s || f && 5 < 6 {
+		if pi == false {
 			(* TESTE *)
 		} else {
 			while      !false {
@@ -33,18 +34,17 @@ main:Int[] where main > 2*4 (a:Int[], b:Double){
 		return ;
 	}
 	a;
-	max(main(main(z, 3),3),2);
 	a.get_array()[s];
 	a[s];
 	return pi2;
 }
 
-min:Int[](i:Int[]) {
+min:Int(i:Int) {
 	return i;
 }
 
-maxi:Int[](a:Int[], b:Int) {
-	z:Int[] = min(a);
+maxi:Int(a:Int, b:Int) {
+	z:Int = min(a);
 	return z;
 }
 

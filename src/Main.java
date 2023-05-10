@@ -7,18 +7,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
-
 import exception.BooleanException;
 import exception.CompilerException;
 import exception.FunctionException;
-import exception.PositionInvalidException;
 import exception.TypeException;
 import exception.VariableException;
 import utils.Pair;
@@ -31,15 +28,11 @@ public class Main {
 	private static final String TERMINAL_NODE_IMPL = "TerminalNodeImpl";
 	private static final String COMMENT = "Comment";
 	private static final String DEFINITION = "Definition";
-	private static final String VNAME_TYPE = "Vname_type";
 	private static final String FUNCTION = "Function";
 	private static final String STATEMENT = "Statement";
-	private static final String ARGS_DEF = "Args_def";
 	private static final String IF_STATEMENT = "If_statement";
 	private static final String ELSE_STATEMENT = "Else_statement";
 	private static final String RETURN_STATEMENT = "Return_statement";
-	private static final String CONDITIONAL_VALUES = "Conditions_values";
-	private static final String COND_VALUE = "cond_value";
 	private static final String OPERATOR = "Operator";
 	private static final String BOOLEAN_EXPRESSION = "Boolean_expression";
 	private static final String WHILE_STATEMENT = "While_statement";
@@ -52,7 +45,6 @@ public class Main {
 	private static final String EXPRESSION = "Expression";
 	private static final String ARRAYS = "Arrays";
 	private static final String POSITION = "Position";
-	private static final String POS = "Pos";
 	private static final String VARIABLE = "Variable";
 	private static final String NUMBER = "Number";
 	private static final String INT = "Int";
@@ -61,7 +53,6 @@ public class Main {
 	private static final String BOOLEAN = "Boolean";
 	private static final String FLOAT = "Float";
 	private static final String VOID = "Void";
-	private static final String STATEMENT_VALUE = "Statement_value";
 	private static final String VALUE_TYPE = "valueType";
 	private static final String IS_ARRAY = "isArray";
 	private static final String RETURN_TYPE = "returnType";
@@ -71,6 +62,7 @@ public class Main {
 	private static final String BOOLEAN_VALUE = "BooleanValue";
 	private static final String POSITION_VALUE = "PositionValue";
 	private static final String MATH = "Math";
+	private static final String VALUE_FUNC = "ValueFunc";
 
 
 
@@ -430,15 +422,10 @@ public class Main {
 			}
 
 		} else if(name.equals(BOOLEAN_EXPRESSION)) {
-			boolean recursion = false;
-			if(child.getChild(1) != null) {
-				String childName = getClassName(child.getChild(1));
-				if(childName.equals(BOOLEAN_EXPRESSION)) {
-					recursion = true;
-					toJson(child.getChild(1), map);
-				}
-			} 
-			if(!recursion) {
+			String childName = getClassName(child.getChild(0));
+			if(childName.equals(TERMINAL_NODE_IMPL)) {
+				toJson(child.getChild(1), map);
+			} else {
 				map.put(BOOLEAN_VALUE, child.getChild(0).getChild(0).getText());
 				insertTypeIntoMap(map, child.getChild(0).getChild(0));
 				if(child.getChildCount() > 2) {
@@ -449,7 +436,8 @@ public class Main {
 					exprValues.add(expr);
 					expr.put(VALUE, new ArrayList<Map<String, Object>>());
 					toJson(child.getChild(2), expr);
-				}	
+
+				}
 			}
 		} else if(name.equals(POSITION)) {
 			map.put(VALUE_TYPE, POSITION);
@@ -474,7 +462,7 @@ public class Main {
 		} else if(name.equals(FUNCTION_CALL)) {
 			map.put(VALUE_TYPE, FUNCTION_CALL);
 			List<Map<String, Object>> exprValues = new ArrayList<>();
-			map.put(VALUE, exprValues);
+			map.put(VALUE_FUNC, exprValues);
 			Map<String, Object> expr = new LinkedHashMap<>();
 			exprValues.add(expr);
 			List<Map<String, Object>> funcList = new ArrayList<>();
@@ -739,7 +727,6 @@ public class Main {
 		}
 	}
 
-	
 	@SuppressWarnings("unchecked")
 	private static void checkReturnStatement(Context context, Map<String, Object> map) throws CompilerException {
 		String currentFunction = context.getCurrentFunction();
@@ -747,12 +734,18 @@ public class Main {
 		boolean isArray = (boolean) pair.getSecond().get(IS_ARRAY);
 		String valueType = getValueType(map, null, context, isArray);
 		String actualType = (String) pair.getSecond().get(TYPE);
+		if(valueType.equals(FUNCTION_CALL)) {
+			List<Map<String, Object>> params = (List<Map<String, Object>>) map.get(VALUE_FUNC);
+			String funcName = (String) ((List<Map<String, Object>>)params.get(0).get(FUNCTION)).get(0).get(VARIABLE);
+			checkParams(context, params, null);
+			Map<String, Object> returnStatement = ((Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+			valueType = (String) returnStatement.get(TYPE);
+		}
 		checkType(actualType, valueType, map, context);
 		if(!map.isEmpty()) {
 			checkArray(isArray, map, context);
 		}
 	}
-
 
 	@SuppressWarnings("unchecked")
 	private static void checkBooleanExpression(Map<String, Object> ifStatement, Context context, String operator) throws CompilerException {
@@ -780,15 +773,20 @@ public class Main {
 						if(bType != null && bType.equals(MATH)) {
 							throw new BooleanException("Condition isn't valid");
 						} else {
+							if(operator.equals(BOOLEAN)) {
+								throw new BooleanException("Condition isn't valid");
+							}
 							operator = null;
 						}
 					}
 				} else if(vType.equals(BOOLEAN)) {
 					if(operator == null) {
-						if(op != null && bType.equals(MATH)) {
+						if(op != null && (op.equals("==") || op.equals("!="))) {
+							operator = BOOLEAN;
+						} else if(op != null && bType.equals(MATH)) {
 							throw new BooleanException("Condition isn't valid");
 						}
-					} else {
+					} else if(!operator.equals(BOOLEAN)){
 						throw new BooleanException("Condition isn't valid");
 					}
 				} else {
@@ -861,10 +859,75 @@ public class Main {
 				}
 			} else {
 				String bType = getType(op);
-				if(op != null && bType.equals(MATH)) {
+				if(op != null && (op.equals("==") || op.equals("!="))) {
+					operator = BOOLEAN;
+				} else if(op != null && bType.equals(MATH)) {
 					throw new BooleanException("Condition isn't valid");
 				} else {
 					operator = null;
+				}
+			}
+		} else if(valueType.equals(FUNCTION_CALL)) {
+
+			List<Map<String, Object>> params = (List<Map<String, Object>>) ifStatement.get(VALUE_FUNC);
+			String funcName = (String) ((List<Map<String, Object>>)params.get(0).get(FUNCTION)).get(0).get(VARIABLE);
+			checkParams(context, params, null);
+			Map<String, Object> returnStatement = ((Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+			boolean isArray = (boolean)returnStatement.get(IS_ARRAY);
+			if(isArray) {
+				throw new TypeException("Function: " + funcName + " returns an array and they aren't allowed in boolean expressions");
+			} else {
+				String funcType = (String) returnStatement.get(TYPE);
+				if(funcType.equals(INT) || funcType.equals(DOUBLE) || funcType.equals(FLOAT)) {
+					if(op == null) {
+						if(operator == null) {
+							throw new BooleanException("Condition isn't valid");
+						} else {
+							if(!operator.equals(MATH)) {
+								throw new BooleanException("Condition isn't valid");
+							} else {
+								operator = null;
+							}
+						}
+					} else {
+						String bType = getType(op);
+						if(operator == null) {
+							if(!bType.equals(MATH)) {
+								throw new BooleanException("Condition isn't valid");
+							} else {
+								operator = getType(op);
+							}
+						} else {
+							if(bType.equals(MATH)) {
+								throw new BooleanException("Condition isn't valid");
+							} else {
+								operator = null;
+							}
+						}
+					}			
+				} else if(funcType.equals(BOOLEAN)) {
+					if(operator != null) {
+						if(!operator.equals(BOOLEAN)) {
+							throw new BooleanException("Condition isn't valid");	
+						}
+						if(op != null) {
+							String bType = getType(op);
+							if(!bType.equals(BOOLEAN)) {
+								throw new BooleanException("Condition isn't valid");	
+							}
+						}
+					} else {
+						String bType = getType(op);
+						if(op != null && (op.equals("==") || op.equals("!="))) {
+							operator = BOOLEAN;
+						} else if(op != null && bType.equals(MATH)) {
+							throw new BooleanException("Condition isn't valid");
+						} else {
+							operator = null;
+						}
+					}
+				} else {
+					throw new TypeException("Type: " + funcType + " isn't valid in boolean expressions");
 				}
 			}
 		}
@@ -910,7 +973,7 @@ public class Main {
 
 	@SuppressWarnings("unchecked")
 	private static void checkFunction(Map<String, Object> func, String key, Context context) throws CompilerException {
-		
+
 		context.setCurrentFunction((String)func.get(NAME));
 		for(Map<String, Object> param : (List<Map<String, Object>>) func.get(PARAMETERS)) {
 			String name = (String)param.get(NAME);
@@ -940,6 +1003,9 @@ public class Main {
 				throw new VariableException("Variable: " + name + " already exists");
 			} else {
 				Object v = variable.get(VALUE);
+				if(v == null) {
+					v = variable.get(VALUE_FUNC);
+				}
 				if(v instanceof ArrayList) {
 					Map<String, Object> value = ((List<Map<String, Object>>) v).get(0);
 					String valueType = getValueType(value, null, context, isArray);
@@ -947,7 +1013,7 @@ public class Main {
 					checkArray(isArray, variable, context);
 					String variableValueType = (String) variable.get(VALUE_TYPE);
 					if(variableValueType.equals(FUNCTION_CALL)) {
-						checkParams(context, (List<Map<String, Object>>)variable.get(VALUE), name);
+						checkParams(context, (List<Map<String, Object>>)variable.get(VALUE_FUNC), name);
 					}
 					context.setType(name, type, (boolean)variable.get(IS_ARRAY));
 				} else {
@@ -988,7 +1054,6 @@ public class Main {
 					checkType(actualType, funcReturnType, params.get(i), context);
 				}
 				boolean funcArray = (boolean) pair.getSecond().get(IS_ARRAY);
-				//checkArray(funcArray, actualParams.get(i), context);
 				if(funcArray) {
 					if(!(boolean) actualParams.get(i).get(IS_ARRAY)) {
 						throw new TypeException("Function: " + funcName + " isn't expected to receive an array at parameter: " + i);
@@ -1052,7 +1117,7 @@ public class Main {
 					throw new TypeException("Can't assign a value to an array");
 				}
 			} else if(valueType.equals(FUNCTION_CALL)) {
-				List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(VALUE)).get(0).get(FUNCTION);
+				List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(VALUE_FUNC)).get(0).get(FUNCTION);
 				String funcName = (String) function.get(0).get(VARIABLE);
 				Map<String, Object> rValue = ((Pair<List<String>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
 				boolean funcArray = (boolean) rValue.get(IS_ARRAY);
@@ -1128,7 +1193,7 @@ public class Main {
 		if(!type.equals(valueType)) {
 			if(type.equals(VOID)) {
 				throw new TypeException("Expecting empty return and return type: " + valueType);
-			}else if(valueType.equals(VARIABLE)) {
+			} else if(valueType.equals(VARIABLE)) {
 				String value = (String) map.get(VALUE);
 				Pair<String, Boolean> pair = (Pair<String, Boolean>)context.getType(value);
 				if(pair == null) {
@@ -1147,11 +1212,23 @@ public class Main {
 						}
 					}
 				}
-			} else if(type.equals(STRING) || type.equals(INT)) {
+			} else if(type.equals(STRING) || type.equals(BOOLEAN)) {
 				throw new TypeException("Excepting type: " + type + " and got: " + valueType);
-			} else if(type.equals(DOUBLE)) {
-				if(!valueType.equals(INT) && !valueType.equals(FLOAT)) {
+			} else if(type.equals(DOUBLE) || type.equals(FLOAT)) {
+				if(valueType.equals(EXPR)) {
+					Map<String, Object> exprMap = ((List<Map<String, Object>>) map.get(VALUE)).get(0);
+					String exprType = getValueType(exprMap, valueType, context, false);
+					checkType(type, exprType, map, context);
+				} else if(!valueType.equals(INT) && !valueType.equals(FLOAT)) {
 					throw new TypeException("Excepting type: " + type + " and got: " + valueType);
+				}
+			} else if(type.equals(INT)) {
+				if(valueType.equals(EXPR)) {
+					Map<String, Object> exprMap = ((List<Map<String, Object>>) map.get(VALUE)).get(0);
+					String exprType = getValueType(exprMap, valueType, context, false);
+					checkType(type, exprType, map, context);
+				} else {
+					throw new TypeException("Excepting type: " + type + " and got: " + valueType);	
 				}
 			}
 		}

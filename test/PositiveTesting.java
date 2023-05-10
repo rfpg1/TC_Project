@@ -27,7 +27,7 @@ class PositiveTesting {
 	@Test
 	void test() {
 		for(String file : files) {
-			String[] args = new String[]{"--tree", "tests"+ File.separator + "positive" + File.separator + file};
+			String[] args = new String[]{"tests"+ File.separator + "positive" + File.separator + file};
 			try {
 				Main.main(args);
 			} catch (IOException | CompilerException | NullPointerException e) {

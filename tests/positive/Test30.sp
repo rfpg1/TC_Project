@@ -1,7 +1,9 @@
-(***** Testing expressions ******* )
-1;
-f(3);
+(* Testing expressions *)
 
-f:Void(a:Int){
-	return ;
+main:Double() {
+	return 4*5.0;
+}
+
+if main() == 0 {
+	
 }
