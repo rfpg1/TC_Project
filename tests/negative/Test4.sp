@@ -1,5 +1,6 @@
-(* Testing function without type on arguments *)
+(* Testing parameters are function calls with wrong number *)
 
-main:Int(a){
-
+main(main(3,4));
+main:Int(a:Double){
+	return 2;
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="src" path="antlr4"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
@@ -9,5 +10,6 @@
 	</classpathentry>
 	<classpathentry exported="true" kind="lib" path="/home/ricardo/Downloads/antlr-4.12.0-complete.jar"/>
 	<classpathentry kind="lib" path="/home/ricardo/Documents/lib/gson-2.10.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

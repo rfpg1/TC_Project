@@ -1,2 +1,2 @@
-(* Testing wrong refinement *)
-abs:Int where abs > (val:Int)  ;
+(* Expression wrong type *)
+abs:Int = 4.0*3;

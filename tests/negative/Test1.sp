@@ -1,4 +1,6 @@
 (* Wrong type operators *)
-pi:Int= 3+3+4;
-a:String = "2";
+pi4:Int = 2.0;
+pi:Int= pi4 * 3;
+a:String = "2568dawd";
 pi2:Int = a * 3;
+(* Wrong type operators2 *)

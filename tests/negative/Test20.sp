@@ -1,3 +1,7 @@
-(* Testing wrong name for variable *)
-3pi:Int = 2;
-(* pi3:Int = pi; *)
+(* Calling function with invalid variable *)
+pi:Int = 2;
+main(pi3);
+main:Void(a:Int) {
+	return ;
+}
+(* pi3:Int = pi*5; *)

@@ -5,4 +5,3 @@ main:Void(a:Int[]) {
 	a.get_array()[pi+1*2/3];
 	return ;
 }
-main(pi);

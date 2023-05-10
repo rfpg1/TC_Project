@@ -1,5 +1,5 @@
-(* Testing function without return type *)
+(* Testing function with wrong return type *)
 
-main(){
-
+main:Void(){
+	return 0;
 }

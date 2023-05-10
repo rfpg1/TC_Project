@@ -1,2 +1,6 @@
-(* Testing wrong refinement *)
-sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != 1a);
+(* Acessing double position *)
+main:Void(a:Int[]) {
+	i:Double = 2.0;
+	a[i];
+	return ;
+}

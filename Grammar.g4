@@ -5,7 +5,15 @@ grammar Grammar;
 prog: (comment|declaration|definition|statement)*EOF;
 
 comment:
-	LEFT_PAR STAR (ANYCHAR|VARIABLE|number|operator|reserved_words)* STAR RIGHT_PAR
+	open_comment(ANYCHAR|VARIABLE|number|operator|reserved_words|declaration|definition|statement|comment)* close_comment
+;
+
+open_comment:
+	LEFT_PAR STAR
+;
+
+close_comment:
+	STAR RIGHT_PAR
 ;
 
 reserved_words:
@@ -26,7 +34,7 @@ reserved_words:
 	|GET_ARRAY
 	|EQUALS
 	|WHERE
-	|STAR
+	|MATH_OPERATOR
 ;
 
 declaration:
@@ -42,7 +50,7 @@ type:
 ;
 
 refinement:
-	WHERE (VARIABLE) operator (number|string_lit|TRUE|FALSE|VARIABLE)
+	WHERE (VARIABLE) operator (number|string_lit|TRUE|FALSE|VARIABLE|expr)
 ;
 
 number:
@@ -58,14 +66,29 @@ statement:
 ;
 
 value:
-	vname_type_optional EQUALS (number|string_lit|VARIABLE|expr|TRUE|FALSE) SEMICOLON
+	vname_type_optional EQUALS (number|string_lit|VARIABLE|expr|TRUE|FALSE|function_call) SEMICOLON
+;
+
+boolean_expression:
+	LEFT_PAR boolean_expression RIGHT_PAR
+	| conditions_values 
+	| conditions_values operator boolean_expression
+	//| conditions_values operator conditions_values operator boolean_expression
+;
+
+conditions_values:
+	VARIABLE
+	|TRUE
+	|FALSE
+	|number
+	|expr
 ;
 
 expr:
-	expr_value
-	|LEFT_PAR expr_value RIGHT_PAR
-	|expr_value (MATH_OPERATOR|STAR) expr_value
-	|expr_value (MATH_OPERATOR|STAR) expr_value (MATH_OPERATOR|STAR) expr
+	LEFT_PAR expr RIGHT_PAR
+	|expr_value
+	|expr_value (MATH_OPERATOR|STAR) expr
+	//|expr_value (MATH_OPERATOR|STAR) expr_value (MATH_OPERATOR|STAR) expr
 ;
 
 expr_value:
@@ -84,8 +107,8 @@ arrays
 position:
 	pos
 	|LEFT_PAR pos RIGHT_PAR
-	|pos (MATH_OPERATOR|STAR) pos
-	|pos (MATH_OPERATOR|STAR) pos (MATH_OPERATOR|STAR) position
+	|pos (MATH_OPERATOR|STAR) position
+	//|pos (MATH_OPERATOR|STAR) pos (MATH_OPERATOR|STAR) position
 ;
 
 pos:
@@ -93,12 +116,12 @@ pos:
 ;
 
 expression:
-	(function_call
+	(function_call SEMICOLON
 	| (number|VARIABLE|ANYCHAR)* SEMICOLON)
 ;
 
 function_call:
-	VARIABLE LEFT_PAR args_value? RIGHT_PAR SEMICOLON
+	VARIABLE LEFT_PAR args_value? RIGHT_PAR
 ;
 
 return_statement:
@@ -130,31 +153,16 @@ while_statement:
 	WHILE_COND (NOT_OPERATOR)? boolean_expression LEFT_BRACKET (statement*)return_statement? RIGHT_BRAKCET
 ;
 
-boolean_expression:
-	(LEFT_PAR boolean_expression RIGHT_PAR
-	| conditions_values 
-	| conditions_values operator conditions_values
-	| conditions_values operator conditions_values operator boolean_expression
-	)
-;
-
-conditions_values:
-	VARIABLE
-	|TRUE
-	|FALSE
-	|number
-;
-
 args_def:
 	vname_type (COMMA vname_type)*
 ;
 
 args_value:
-	(number|string_lit|TRUE|FALSE|VARIABLE) (COMMA (number|string_lit|TRUE|FALSE|VARIABLE))*
+	(function_call|number|string_lit|TRUE|FALSE|VARIABLE) (COMMA (function_call|number|string_lit|TRUE|FALSE|VARIABLE))*
 ;
 
 operator:
-	(MATH_OPERATOR | BOOLEAN_OPERATOR|STAR)
+	BOOLEAN_OPERATOR|CONDITIONAL_OPERATOR
 ;
 
 /* terminals start with uppercase, and can be defined using regular expressions. */
@@ -187,7 +195,8 @@ STAR: '*';
 NUMBER_INT: [0-9_]+; /* Underscore can be in any position */
 NUMBER_FLOAT: ('.'[0-9]+|[0-9]+'.'[0-9]+);
 MATH_OPERATOR: '+' | '-' | '*' | '/' | '%';
-BOOLEAN_OPERATOR: '&&' | '||' | '==' | '!=' | '>=' | '<=' | '<' | '>' ;
+BOOLEAN_OPERATOR: '==' | '!=' | '>=' | '<=' | '<' | '>' ;
+CONDITIONAL_OPERATOR: '&&' | '||';
 NOT_OPERATOR: '!';
 NEWLINE : [\r\n]+ -> skip;
 SPACE: (' '|'\t') -> skip;

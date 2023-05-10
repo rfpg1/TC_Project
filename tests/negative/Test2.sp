@@ -1,2 +1,5 @@
 (* Testing semicolon is mandatory *)
-a
+
+while !true && 4 > true{
+
+}

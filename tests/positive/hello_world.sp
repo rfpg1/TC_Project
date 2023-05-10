@@ -1,32 +1,50 @@
 (*2<++d 
 wada   á*)
-a:Int = 2;
-main:Int[](a:String[], b:Double){
+(* dwada *)
+
+k:Double = 4.0;
+d:Int = 2*4;
+s:Int = d;
+f:Boolean = true;
+a:Int[] = maxi(2, 2);
+b:Double[] = min(a);
+z:Int[] = min(a);
+main:Int[] where main > 2*4 (a:Int[], b:Double){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
 	abs:Int where abs > 0 (val:Int)  ;
+	abs(2);
 	pi1:String = "true\t";
-	pi2:Int = 2;
+	pi2:Int[] = min(a);
 	pi3:Double = pi2*4*3;
-	pi3 = 2;
-	max:Int (a:Int, b:Int) {
-		if !(a > 2) {
+	pi4:Int = 2;
+	max:Void (a:Int, b:Int) {
+		if !s > s || f && 5 < 6 {
 			(* TESTE *)
 		} else {
-			while      !((false)) {
+			while      !false {
 				if 2 > 2 {
-					_ola:Int = 3; 
-					return _ola;(*** comment *)
+					_ola:Int = 3*4; 
+					return ;(* comment *)
 				}
+				return ;
 			}
 		}
-		return pi2;
+		return ;
 	}
 	a;
-	main("a", 4);
-	max(3,2);
-	sample_normal(2,3);
-	a.get_array()[pi2+1*2];
-	a[1];
+	max(main(main(z, 3),3),2);
+	a.get_array()[s];
+	a[s];
 	return pi2;
 }
+
+min:Int[](i:Int[]) {
+	return i;
+}
+
+maxi:Int[](a:Int[], b:Int) {
+	z:Int[] = min(a);
+	return z;
+}
+
