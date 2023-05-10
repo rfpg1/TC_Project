@@ -25,8 +25,7 @@ class NegativeTesting {
 	@Test
 	void test() {
 		for(String file : files) {
-			String[] args = new String[]{"--tree", "tests"+ File.separator + "negative" + File.separator + file};
-			System.out.println(file);
+			String[] args = new String[]{"tests"+ File.separator + "negative" + File.separator + file};
 			assertThrows(CompilerException.class, () ->Main.main(args));			
 		}
 		assertTrue(true);
