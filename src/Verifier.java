@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import exception.BooleanException;
 import exception.CompilerException;
 import exception.FunctionException;
+import exception.InvalidReturnException;
 import exception.TypeException;
 import exception.VariableException;
 import utils.Pair;
@@ -35,6 +36,9 @@ public class Verifier {
 							context.exitScope();
 						}
 					} else if(key.equals(Constant.FUNCTION_CALL)) {
+						if(context.getCurrentFunction() == null) {
+							throw new FunctionException("Function calls can only occur inside a function");
+						}
 						List<Map<String, Object>> funcCalls = (List<Map<String, Object>>) statement.get(key);
 						for(Map<String, Object> call : funcCalls) {
 							List<Map<String, Object>> function = new ArrayList<>();
@@ -46,6 +50,9 @@ public class Verifier {
 							checkParams(context, function, null);
 						}
 					} else if(key.equals(Constant.IF_STATEMENT) || key.equals(Constant.WHILE_STATEMENT)) {
+						if(context.getCurrentFunction() == null) {
+							throw new FunctionException(key + " can only occur inside a function");
+						}
 						Map<String, Object> ifStatement = ((List<Map<String, Object>>) statement.get(key)).get(0);
 						checkBooleanExpression(ifStatement, context, null);
 						List<Map<String, Object>> states = (List<Map<String, Object>>) ifStatement.get(Constant.STATEMENT);
@@ -110,6 +117,9 @@ public class Verifier {
 	@SuppressWarnings("unchecked")
 	private void checkReturnStatement(Context context, Map<String, Object> map) throws CompilerException {
 		String currentFunction = context.getCurrentFunction();
+		if(currentFunction == null) {
+			throw new InvalidReturnException("Trying to return something without declaring a function");
+		}
 		Pair<List<Map<String, Object>>, Map<String, Object>> pair = (Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(currentFunction);
 		boolean isArray = (boolean) pair.getSecond().get(Constant.IS_ARRAY);
 		String valueType = getValueType(map, null, context, isArray);

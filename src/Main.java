@@ -36,6 +36,8 @@ public class Main {
 					addFunctions(c, tree);
 					Verifier v = new Verifier();
 					v.verify(c, (List<Map<String, Object>>) tree.get(Constant.STATEMENT));
+					Emitter e = new Emitter();
+					e.compileToLLVM(tree);
 				} catch(IOException e) {
 					System.out.println("File " + args[i] + " does not exist");
 				}
