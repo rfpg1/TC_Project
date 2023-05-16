@@ -1,4 +1,7 @@
-
-.classpath
-.settings/*
-.project
+*.classpath
+*.settings/*
+*.project
+Notas
+*.out
+*.zip
+*.c
