@@ -66,7 +66,7 @@ statement:
 ;
 
 value:
-	vname_type_optional EQUALS (number|string_lit|VARIABLE|expr|TRUE|FALSE|function_call) SEMICOLON
+	vname_type_optional EQUALS (function_call|number|string_lit|VARIABLE|expr|TRUE|FALSE) SEMICOLON
 ;
 
 boolean_expression:
@@ -80,8 +80,8 @@ conditions_values:
 	|TRUE
 	|FALSE
 	|number
-	|expr
 	|function_call
+	|expr
 ;
 
 expr:
@@ -91,7 +91,7 @@ expr:
 ;
 
 expr_value:
-	(number|VARIABLE)
+	(number|VARIABLE|function_call)
 ;
 
 vname_type_optional:
@@ -107,7 +107,6 @@ position:
 	pos
 	|LEFT_PAR pos RIGHT_PAR
 	|pos (MATH_OPERATOR|STAR) position
-	//|pos (MATH_OPERATOR|STAR) pos (MATH_OPERATOR|STAR) position
 ;
 
 pos:

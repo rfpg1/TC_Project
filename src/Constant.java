@@ -42,6 +42,8 @@ public class Constant {
 	public static final String POSITION_VALUE = "PositionValue";
 	public static final String MATH = "Math";
 	public static final String VALUE_FUNC = "ValueFunc";
+	public static final String TRUE = "true";
+	public static final String FALSE = "false";
 
 	public static final int VARIABLE_TYPE = 36;
 	public static final int BOOLEAN_TYPE = 8;

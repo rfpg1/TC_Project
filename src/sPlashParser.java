@@ -8,12 +8,9 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
-import exception.CompilerException;
-import exception.FunctionException;
-import utils.Pair;
-
 public class sPlashParser {
 
+	@SuppressWarnings("unchecked")
 	public Map<String, Object> toJson(ParseTree p, Map<String, Object> map) {
 		String name = getClassName(p);
 
@@ -325,6 +322,18 @@ public class sPlashParser {
 			} else if(typeExprClass.equals(Constant.NUMBER)) {
 				Token token = ((TerminalNodeImpl) child.getChild(0).getChild(0).getChild(0)).getSymbol();
 				updateMap(token, expr);
+			} else if(typeExprClass.equals(Constant.FUNCTION_CALL)) {
+				expr.put(Constant.VALUE_TYPE, Constant.FUNCTION_CALL);
+				List<Map<String, Object>> funcValues = new ArrayList<>();
+				expr.put(Constant.VALUE_FUNC, funcValues);
+				Map<String, Object> funcExpr = new LinkedHashMap<>();
+				funcValues.add(funcExpr);
+				List<Map<String, Object>> funcList = new ArrayList<>();
+				Map<String, Object> funcMap = new LinkedHashMap<>();
+				funcList.add(funcMap);
+				funcExpr.put(Constant.FUNCTION, funcList);
+				funcMap.put(Constant.VARIABLE, child.getChild(0).getChild(0).getChild(0).getText());
+				updateArgsValue(child.getChild(0).getChild(0).getChild(2), funcMap);
 			}
 			if(child.getChildCount() > 1) {
 				expr.put(Constant.OPERATOR, child.getChild(1).getText());

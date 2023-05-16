@@ -99,11 +99,11 @@ public class Verifier {
 		String valueType = (String) position.get(0).get(Constant.VALUE_TYPE);
 		String positionValue = (String) position.get(0).get(Constant.POSITION_VALUE);
 		if(valueType.equals(Constant.VARIABLE)) {
-			Pair<Object, Boolean> pair = (Pair<Object, Boolean>) context.getType(positionValue);
+			Pair<List<Object>, Boolean> pair = (Pair<List<Object>, Boolean>) context.getType(positionValue);
 			if(pair == null) {
 				throw new VariableException("Variable: " + positionValue + " doesn't exist");
 			}
-			String varType = (String) pair.getFirst();
+			String varType = (String)((List<Object>) pair.getFirst()).get(0);
 			if(!varType.equals(Constant.INT)) {
 				throw new TypeException("When acessing array: " + varName + " position value: " + positionValue + " must be an integer but it is: " + varType);
 			}
@@ -143,12 +143,12 @@ public class Verifier {
 		String op = (String) ifStatement.get(Constant.OPERATOR);
 		if(valueType.equals(Constant.VARIABLE)) {
 			String varName = (String) ifStatement.get(Constant.BOOLEAN_VALUE);
-			Pair<String, Object> pair = (Pair<String, Object>) context.getType(varName);
+			Pair<List<Object>, Object> pair = (Pair<List<Object>, Object>) context.getType(varName);
 			if(pair == null) {
 				throw new VariableException("Variable: " + varName + " doesn't exist");
 			} else {
-				String vType = (String) pair.getFirst();
-				String bType = getType(op);
+				String vType = (String) ((List<Object>) pair.getFirst()).get(0);
+				String bType = getOperatorType(op);
 				if(vType.equals(Constant.DOUBLE) || vType.equals(Constant.INT) || vType.equals(Constant.FLOAT)) {
 					if(operator == null) {
 						if(op == null) {
@@ -195,12 +195,12 @@ public class Verifier {
 					}
 				}
 			} else {
-				String bType = getType(op);
+				String bType = getOperatorType(op);
 				if(operator == null) {
 					if(!bType.equals(Constant.MATH)) {
 						throw new BooleanException("Condition isn't valid");
 					} else {
-						operator = getType(op);
+						operator = getOperatorType(op);
 					}
 				} else {
 					if(bType.equals(Constant.MATH)) {
@@ -219,7 +219,7 @@ public class Verifier {
 					operator = null;
 				}
 			} else {
-				String bType = getType(op);
+				String bType = getOperatorType(op);
 				if(operator == null) {
 					if(!bType.equals(Constant.MATH)) {
 						throw new BooleanException("Condition isn't valid");
@@ -242,13 +242,13 @@ public class Verifier {
 					throw new BooleanException("Condition isn't valid");	
 				}
 				if(op != null) {
-					String bType = getType(op);
+					String bType = getOperatorType(op);
 					if(!bType.equals(Constant.BOOLEAN)) {
 						throw new BooleanException("Condition isn't valid");	
 					}
 				}
 			} else {
-				String bType = getType(op);
+				String bType = getOperatorType(op);
 				if(op != null && (op.equals("==") || op.equals("!="))) {
 					operator = Constant.BOOLEAN;
 				} else if(op != null && bType.equals(Constant.MATH)) {
@@ -280,12 +280,12 @@ public class Verifier {
 							}
 						}
 					} else {
-						String bType = getType(op);
+						String bType = getOperatorType(op);
 						if(operator == null) {
 							if(!bType.equals(Constant.MATH)) {
 								throw new BooleanException("Condition isn't valid");
 							} else {
-								operator = getType(op);
+								operator = getOperatorType(op);
 							}
 						} else {
 							if(bType.equals(Constant.MATH)) {
@@ -301,13 +301,13 @@ public class Verifier {
 							throw new BooleanException("Condition isn't valid");	
 						}
 						if(op != null) {
-							String bType = getType(op);
+							String bType = getOperatorType(op);
 							if(!bType.equals(Constant.BOOLEAN)) {
 								throw new BooleanException("Condition isn't valid");	
 							}
 						}
 					} else {
-						String bType = getType(op);
+						String bType = getOperatorType(op);
 						if(op != null && (op.equals("==") || op.equals("!="))) {
 							operator = Constant.BOOLEAN;
 						} else if(op != null && bType.equals(Constant.MATH)) {
@@ -350,7 +350,7 @@ public class Verifier {
 		}
 	}
 
-	private String getType(String op) {
+	private String getOperatorType(String op) {
 		List<String> mathOperator = new ArrayList<>(Arrays.asList(Constant.MATH_OPERATOR));
 		List<String> booleanOperator = new ArrayList<>(Arrays.asList(Constant.BOOLEAN_OPERATOR));
 		if(mathOperator.contains(op)) {
@@ -370,7 +370,7 @@ public class Verifier {
 			if(context.hasVarInCurrentScope(name)) {
 				throw new VariableException("Variable: " + name + " already exists in this scope");
 			}			
-			context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY));
+			context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null);
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
 	}
@@ -398,19 +398,26 @@ public class Verifier {
 				}
 				if(v instanceof ArrayList) {
 					Map<String, Object> value = ((List<Map<String, Object>>) v).get(0);
+					String t = (String) variable.get(Constant.VALUE_TYPE);
+					if(t.equals(Constant.EXPR) && context.getCurrentFunction() == null) {
+						throw new VariableException("Variable: " + name + " can't be defined as an expression since there is no function defined yet");
+					}
 					String valueType = getValueType(value, null, context, isArray);
 					checkType(type, valueType, variable, context);
 					checkArray(isArray, variable, context);
 					String variableValueType = (String) variable.get(Constant.VALUE_TYPE);
 					if(variableValueType.equals(Constant.FUNCTION_CALL)) {
+						if(context.getCurrentFunction() == null) {
+							throw new FunctionException("Function calls aren't valid when declaring functions");
+						}
 						checkParams(context, (List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC), name);
 					}
-					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY));
+					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value);
 				} else {
 					String valueType = (String) variable.get(Constant.VALUE_TYPE);
 					checkType(type, valueType, variable, context);
 					checkArray(isArray, variable, context);
-					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY));
+					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v);
 				}
 			}
 		}
@@ -548,13 +555,23 @@ public class Verifier {
 				}
 			}
 		}
+		if(valueType.equals(Constant.FUNCTION_CALL)) {
+			if(context.getCurrentFunction() == null) {
+				throw new VariableException("Function calls aren't allowed outside of functions");
+			}
+			List<Map<String, Object>> f = (List<Map<String, Object>>) value.get(Constant.VALUE_FUNC);
+			checkParams(context, f, null);
+			String funcName = (String) ((List<Map<String, Object>>)f.get(0).get(Constant.FUNCTION)).get(0).get(Constant.VARIABLE);
+			String rType = (String) ((Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+			valueType = rType;
+		} 
 		if(valueType.equals(Constant.VARIABLE)) {
-			Pair<Object, Boolean> type =(Pair<Object, Boolean>)context.getType((String)value.get(Constant.EXPRESSION_VALUE));
+			Pair<List<Object>, Boolean> type =(Pair<List<Object>, Boolean>)context.getType((String)value.get(Constant.EXPRESSION_VALUE));
 			if(type != null) {
-				valueType = (String) type.getFirst();
+				valueType = (String) ((List<Object>) type.getFirst()).get(0);
 			} else {
 				String varName = (String) value.get(Constant.VALUE);
-				type =(Pair<Object, Boolean>)context.getType(varName);
+				type = (Pair<List<Object>, Boolean>)context.getType(varName);
 				if(type == null) {
 					throw new VariableException("Variable: " + varName + " doesn't exist");
 				} else {
@@ -568,7 +585,7 @@ public class Verifier {
 							throw new VariableException("Variable: " + varName + " isn't an array and it expected to be");
 						}
 					}
-					valueType = (String) type.getFirst();
+					valueType = (String) ((List<Object>) type.getFirst()).get(0);
 				}
 			}
 		} else if(value.get(Constant.EXPRESSION_VALUE) != null &&  value.get(Constant.VALUE) != null) {
@@ -585,11 +602,11 @@ public class Verifier {
 				throw new TypeException("Expecting empty return and return type: " + valueType);
 			} else if(valueType.equals(Constant.VARIABLE)) {
 				String value = (String) map.get(Constant.VALUE);
-				Pair<String, Boolean> pair = (Pair<String, Boolean>)context.getType(value);
+				Pair<List<Object>, Boolean> pair = (Pair<List<Object>, Boolean>)context.getType(value);
 				if(pair == null) {
 					throw new VariableException("Variable: " + value + " doesn't exist");
 				}
-				String varType = pair.getFirst();
+				String varType = (String) ( (List<Object>)pair.getFirst()).get(0);
 				if(varType == null) {
 					throw new VariableException("Variable: " + value + " doesn't exist");
 				}

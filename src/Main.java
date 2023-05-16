@@ -3,10 +3,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+
 import exception.CompilerException;
 import exception.FunctionException;
 import utils.Pair;
@@ -37,7 +39,8 @@ public class Main {
 					Verifier v = new Verifier();
 					v.verify(c, (List<Map<String, Object>>) tree.get(Constant.STATEMENT));
 					Emitter e = new Emitter();
-					e.compileToLLVM(tree);
+					Compiler com = new Compiler(e, c, (List<Map<String, Object>>) tree.get(Constant.STATEMENT));
+					com.compileToLLVM();
 				} catch(IOException e) {
 					System.out.println("File " + args[i] + " does not exist");
 				}

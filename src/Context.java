@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +34,10 @@ public class Context {
 		return null;
 	}
 	
-	public void setType(String name, Object o, boolean array) {
+	public void setType(String name, Object o, boolean array, Object value) {
 		Map<String, Object> scope = stack.get(head);
-		scope.put(name, new Pair<Object, Boolean>(o, array));
+		List<Object> objs = new ArrayList<>(Arrays.asList(o, value));
+		scope.put(name, new Pair<List<Object>, Boolean>(objs, array));
 	}
 	
 	public Object getFunction(String functionName) {

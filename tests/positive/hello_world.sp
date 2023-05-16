@@ -2,13 +2,12 @@
 wada   á*)
 (* dwada *)
 
-k:Double = 4.0;
-d:Int = 2*4;
+k:Int = 2;
+d:Int = 5;
 s:Int = d;
 f:Boolean = true;
-a:Int = maxi(2, 2);
-b:Double = min(a);
-z:Int = min(a);
+b:Double = 3;
+z:Int = 2;
 main:Int where main > 2*4 (a:Int[], b:Double){
 (* dwada *)
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
