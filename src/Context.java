@@ -34,9 +34,9 @@ public class Context {
 		return null;
 	}
 	
-	public void setType(String name, Object o, boolean array, Object value) {
+	public void setType(String name, Object o, boolean array, Object value, boolean isConstant) {
 		Map<String, Object> scope = stack.get(head);
-		List<Object> objs = new ArrayList<>(Arrays.asList(o, value));
+		List<Object> objs = new ArrayList<>(Arrays.asList(o, value, isConstant));
 		scope.put(name, new Pair<List<Object>, Boolean>(objs, array));
 	}
 	
@@ -104,5 +104,19 @@ public class Context {
 	public boolean isArray(String vName) {
 		Pair<String, Object> a = (Pair<String, Object>) this.getType(vName);
 		return (Boolean)a.getSecond();
+	}
+
+	public boolean hasVarInPreviousScopes(String name) {
+		for(int i = stack.size() - 1; i > 0; i--) {
+			Map<String, Object> scope = stack.get(i);
+			if(scope.keySet().contains(name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public Stack<Map<String, Object>> getStack() {
+		return stack;
 	}
 }

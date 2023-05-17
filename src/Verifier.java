@@ -56,19 +56,15 @@ public class Verifier {
 						Map<String, Object> ifStatement = ((List<Map<String, Object>>) statement.get(key)).get(0);
 						checkBooleanExpression(ifStatement, context, null);
 						List<Map<String, Object>> states = (List<Map<String, Object>>) ifStatement.get(Constant.STATEMENT);
-						context.enterScope();
 						verify(context, states);
 						List<Map<String, Object>> returnList = (List<Map<String, Object>>)ifStatement.get(Constant.RETURN_STATEMENT);
 						if(returnList != null) {
 							checkReturnStatement(context, returnList.get(0));
 						}
-						context.exitScope();
 					} else if(key.equals(Constant.ELSE_STATEMENT)) {
 						Map<String, Object> elseStatement = ((List<Map<String, Object>>) statement.get(key)).get(0);
 						List<Map<String, Object>> states = (List<Map<String, Object>>) elseStatement.get(Constant.STATEMENT);
-						context.enterScope();
 						verify(context, states);
-						context.exitScope();
 					} else if(key.equals(Constant.ARRAYS)) {
 						List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(key);
 						for(Map<String, Object> array : arrays) {
@@ -369,8 +365,16 @@ public class Verifier {
 			String name = (String)param.get(Constant.NAME);
 			if(context.hasVarInCurrentScope(name)) {
 				throw new VariableException("Variable: " + name + " already exists in this scope");
-			}			
-			context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null);
+			}
+			if(context.hasVarInPreviousScopes(name)) {
+				throw new VariableException("Variable: " + name + " already exists in outer functions");
+			}
+			
+			if(context.getCurrentFunction() == null)
+				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, true);
+			else
+				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, false);
+			
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
 	}
@@ -412,12 +416,18 @@ public class Verifier {
 						}
 						checkParams(context, (List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC), name);
 					}
-					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value);
+					if(context.getCurrentFunction() == null)
+						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value, true);
+					else
+						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value, false);
 				} else {
 					String valueType = (String) variable.get(Constant.VALUE_TYPE);
 					checkType(type, valueType, variable, context);
 					checkArray(isArray, variable, context);
-					context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v);
+					if(context.getCurrentFunction() == null)
+						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v, true);
+					else
+						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v, false);
 				}
 			}
 		}

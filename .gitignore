@@ -5,3 +5,4 @@ Notas
 *.out
 *.zip
 *.c
+/target/

@@ -2,9 +2,9 @@
 wada   á*)
 (* dwada *)
 
-k:Int = 2;
-d:Int = 5;
-s:Int = d;
+k:String = "2";
+d:String = k;
+s:String = d;
 f:Boolean = true;
 b:Double = 3;
 z:Int = 2;
@@ -18,7 +18,7 @@ main:Int where main > 2*4 (a:Int[], b:Double){
 	pi2:Int = min(2);
 	pi3:Double = pi2*4*3;
 	pi4:Int = 2;
-	max:Void (a:Int, b:Int) {
+	max:Void (adawda:Int, zczsb:Int) {
 		if pi == false {
 			(* TESTE *)
 		} else {
@@ -33,10 +33,12 @@ main:Int where main > 2*4 (a:Int[], b:Double){
 		return ;
 	}
 	a;
-	a.get_array()[s];
-	a[s];
+	a.get_array()[3];
+	a[3];
 	return pi2;
 }
+
+kkk:Int = 4;
 
 min:Int(i:Int) {
 	return i;
