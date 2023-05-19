@@ -580,6 +580,10 @@ public class Verifier {
 			if(type != null) {
 				valueType = (String) ((List<Object>) type.getFirst()).get(0);
 			} else {
+				String v = (String) value.get(Constant.EXPRESSION_VALUE);
+				if(v != null && !context.hasVar(v)) {
+					throw new VariableException("Variable: " + v + " doesn't exist");
+				}
 				String varName = (String) value.get(Constant.VALUE);
 				type = (Pair<List<Object>, Boolean>)context.getType(varName);
 				if(type == null) {

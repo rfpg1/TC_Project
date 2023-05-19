@@ -12,15 +12,25 @@ public class Emitter {
 	private int functionCount;
 	private int stringCount;
 	private List<String> vars;
-
+	private int countVars;
+ 
 	public Emitter() {
 		this.count = 0;
 		this.functionCount = 0 ;
 		this.lines = new ArrayList<>();
 		this.stringCount = 0;
 		this.vars = new ArrayList<>();
-	}
+		this.countVars = 0;
+	}	
 	
+	public int getCountVars() {
+		return countVars;
+	}
+
+	public void incrementCountVars() {
+		this.countVars++;
+	}
+
 	public void addVar(String var) {
 		this.vars.add(var);
 	}
@@ -49,7 +59,16 @@ public class Emitter {
 			List<String> s = new ArrayList<>(Arrays.asList(line));
 			this.lines.add(count, s);
 		}
-		
+	}
+	
+	public void insert(String line, int index) {
+		if(index < this.lines.size()) {
+			List<String> s = this.lines.get(index);
+			s.add(line);
+		} else {
+			List<String> s = new ArrayList<>(Arrays.asList(line));
+			this.lines.add(index, s);
+		}
 	}
 	
 	public void incrementCount() {
