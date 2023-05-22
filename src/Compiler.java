@@ -160,7 +160,7 @@ public class Compiler {
 		emitter.incrementCountVars();
 		String elseLabel = "%else_label" + emitter.getCountVars();
 		emitter.incrementCountVars();
-		String var = getBooleanExpr(state, index, null);
+		String var = getBooleanExpr(state, index, null, 0);
 		if(hasIfStatements(state)) {
 			if(hasElseStatement(state)) {
 				emitter.insert("br i1 " + var + ", label " + ifLabel + ", label " + elseLabel, index);
@@ -225,7 +225,7 @@ public class Compiler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private String getBooleanExpr(Map<String, Object> state, int index, String exprVar) {
+	private String getBooleanExpr(Map<String, Object> state, int index, String exprVar, int flag) {
 		String type = (String) state.get(Constant.VALUE_TYPE);
 		String value = "";
 		String tempVar = "%temp_var" + emitter.getCountVars();
@@ -263,40 +263,54 @@ public class Compiler {
 			if(opType.equals(Constant.MATH)) {
 				v2 = getValue(nMap, null, null, 0);
 			} else {
-				v2 = getBooleanExpr(nMap, index, exprVar);
+				v2 = getBooleanExpr(nMap, index, exprVar, 1);
 			}
 			String fTemp = "%result_boolean" + emitter.getCountVars();
 			emitter.incrementCountVars();
-			switch(op) {
-			case "||":
-				emitter.insert(fTemp + " = or i1 " + tempVar + ", " + v2, index);
-				break;
-			case "&&":
-				emitter.insert(fTemp + " = and i32 " + tempVar + ", " + v2, index);
-
-				break;
-			case ">":
-				emitter.insert(fTemp + " = icmp sgt i32 " + tempVar + ", " + v2, index);
-				break;
-			case ">=":
-				emitter.insert(fTemp + " = icmp sge i32 " + tempVar + ", " + v2, index);
-				break;
-			case "<":
-				emitter.insert(fTemp + " = icmp slt i32 " + tempVar + ", " + v2, index);
-				break;
-			case "<=":
-				emitter.insert(fTemp + " = icmp sle i32 " + tempVar + ", " + v2, index);
-				break;
-			case "==":
-				emitter.insert(fTemp + " = icmp eq i32 " + tempVar + ", " + v2, index);
-				break;
-			case "!=":
-				emitter.insert(fTemp + " = icmp ne i32 " + tempVar + ", " + v2, index);
-				break;
+			switchCase(fTemp, tempVar, v2, index, op);
+			List<Map<String, Object>> nnMap = (List<Map<String, Object>>) nMap.get(Constant.VALUE_BOOLEAN);
+			if(nnMap != null && nnMap.size() > 0 && flag == 1) {
+				Map<String, Object> b = nnMap.get(0);
+				String s = getBooleanExpr(b, index, exprVar, 1);
+				op = (String) nMap.get(Constant.OPERATOR);
+				String nTemp = "%temp_var" + emitter.getCountVars();
+				emitter.incrementCountVars();
+				switchCase(nTemp, fTemp, s, index, op);
+				fTemp = nTemp;
 			}
 			return fTemp;
 		} else {
 			return tempVar;
+		}
+	}
+
+	private void switchCase(String fTemp, String tempVar, String v2, int index, String op) {
+		switch(op) {
+		case "||":
+			emitter.insert(fTemp + " = or i1 " + tempVar + ", " + v2, index);
+			break;
+		case "&&":
+			emitter.insert(fTemp + " = and i32 " + tempVar + ", " + v2, index);
+
+			break;
+		case ">":
+			emitter.insert(fTemp + " = icmp sgt i32 " + tempVar + ", " + v2, index);
+			break;
+		case ">=":
+			emitter.insert(fTemp + " = icmp sge i32 " + tempVar + ", " + v2, index);
+			break;
+		case "<":
+			emitter.insert(fTemp + " = icmp slt i32 " + tempVar + ", " + v2, index);
+			break;
+		case "<=":
+			emitter.insert(fTemp + " = icmp sle i32 " + tempVar + ", " + v2, index);
+			break;
+		case "==":
+			emitter.insert(fTemp + " = icmp eq i32 " + tempVar + ", " + v2, index);
+			break;
+		case "!=":
+			emitter.insert(fTemp + " = icmp ne i32 " + tempVar + ", " + v2, index);
+			break;
 		}
 	}
 
