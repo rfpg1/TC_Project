@@ -161,12 +161,9 @@ public class Compiler {
 		String elseLabel = "%else_label" + emitter.getCountVars();
 		emitter.incrementCountVars();
 		String var = getBooleanExpr(state, index, null);
-		String v1 = "%result_" + emitter.getCountVars();
-		emitter.incrementCountVars();
-		emitter.insert(v1 + " = trunc i32 " + var + " to i1", index);
 		if(hasIfStatements(state)) {
 			if(hasElseStatement(state)) {
-				emitter.insert("br i1 " + v1 + ", label " + ifLabel + ", label " + elseLabel, index);
+				emitter.insert("br i1 " + var + ", label " + ifLabel + ", label " + elseLabel, index);
 				emitter.insert(ifLabel.substring(1, ifLabel.length()) + ":", index);
 				List<Map<String, Object>> statesIf = (List<Map<String, Object>>) state.get(Constant.STATEMENT); 
 				addStatements(statesIf, index);
@@ -182,7 +179,7 @@ public class Compiler {
 					}
 				}
 			} else {
-				emitter.insert("br i1 " + v1 + ", label " + ifLabel + ", label " + endLabel, index);
+				emitter.insert("br i1 " + var + ", label " + ifLabel + ", label " + endLabel, index);
 				emitter.insert(ifLabel.substring(1, ifLabel.length()) + ":", index);
 				List<Map<String, Object>> statesIf = (List<Map<String, Object>>) state.get(Constant.STATEMENT); 
 				addStatements(statesIf, index);
@@ -194,7 +191,7 @@ public class Compiler {
 			}
 		} else {
 			if(hasElseStatement(state)) {
-				emitter.insert("br i1 " + v1 + ", label " + endLabel + ", label " + elseLabel, index);
+				emitter.insert("br i1 " + var + ", label " + endLabel + ", label " + elseLabel, index);
 				emitter.insert(elseLabel.substring(1, elseLabel.length()) + ":", index);
 				List<Map<String, Object>> eStaments = (List<Map<String, Object>>) state.get(Constant.STATEMENT);
 				for(Map<String, Object> eState : eStaments) {
@@ -206,7 +203,7 @@ public class Compiler {
 					}
 				}
 			} else {
-				emitter.insert("br i1 " + v1 + ", label " + endLabel + ", label " + endLabel, index);
+				emitter.insert("br i1 " + var + ", label " + endLabel + ", label " + endLabel, index);
 			}
 		}	
 		
@@ -261,18 +258,18 @@ public class Compiler {
 		}
 		if(op != null) {
 			Map<String, Object> nMap = ((List<Map<String, Object>>) state.get(Constant.VALUE_BOOLEAN)).get(0);
-			//String opType = Constant.getOperatorType(op);
-
-			String v2 = getBooleanExpr(nMap, index, exprVar);
+			String opType = Constant.getOperatorType(op);
+			String v2;
+			if(opType.equals(Constant.MATH)) {
+				v2 = getValue(nMap, null, null, 0);
+			} else {
+				v2 = getBooleanExpr(nMap, index, exprVar);
+			}
 			String fTemp = "%result_boolean" + emitter.getCountVars();
-			emitter.incrementCountVars();
-			String temp2 = "%temp_var" + emitter.getCountVars();
 			emitter.incrementCountVars();
 			switch(op) {
 			case "||":
 				emitter.insert(fTemp + " = or i1 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case "&&":
 				emitter.insert(fTemp + " = and i32 " + tempVar + ", " + v2, index);
@@ -280,33 +277,21 @@ public class Compiler {
 				break;
 			case ">":
 				emitter.insert(fTemp + " = icmp sgt i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case ">=":
 				emitter.insert(fTemp + " = icmp sge i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case "<":
 				emitter.insert(fTemp + " = icmp slt i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case "<=":
 				emitter.insert(fTemp + " = icmp sle i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case "==":
 				emitter.insert(fTemp + " = icmp eq i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			case "!=":
 				emitter.insert(fTemp + " = icmp ne i32 " + tempVar + ", " + v2, index);
-				emitter.insert(temp2 + " = zext i1 " + fTemp + " to i32", index);
-				fTemp = temp2;
 				break;
 			}
 			return fTemp;
@@ -333,9 +318,6 @@ public class Compiler {
 	private String booleanTypeExpr(String value, String tempVar, int index, Map<String, Object> state) {
 		value = getBooleanValue((String)state.get(Constant.BOOLEAN_VALUE));
 		emitter.insert(tempVar + " = icmp eq i32 " + value + ", 1", index);
-		String temp2 = "%temp_var" + emitter.getCountVars();
-		emitter.insert(temp2 + " = zext i1 " + tempVar + " to i32", index);
-		tempVar = temp2;
 		
 		return tempVar;
 		
