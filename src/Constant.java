@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Constant {
 
@@ -44,6 +47,7 @@ public class Constant {
 	public static final String VALUE_FUNC = "ValueFunc";
 	public static final String TRUE = "true";
 	public static final String FALSE = "false";
+	public static final String VALUE_BOOLEAN = "ValueBoolean";
 
 	public static final int VARIABLE_TYPE = 36;
 	public static final int BOOLEAN_TYPE = 8;
@@ -51,4 +55,15 @@ public class Constant {
 	public static final int NUMBER_DOUBLE_TYPE = 29;
 	public static final String[] MATH_OPERATOR = {"*", "+", "-", "/", "%", "<", ">", ">=", "<=", "=="};
 	public static final String[] BOOLEAN_OPERATOR = {"&&", "||"};
+	
+	public static String getOperatorType(String op) {
+		List<String> mathOperator = new ArrayList<>(Arrays.asList(Constant.MATH_OPERATOR));
+		List<String> booleanOperator = new ArrayList<>(Arrays.asList(Constant.BOOLEAN_OPERATOR));
+		if(mathOperator.contains(op)) {
+			return Constant.MATH;
+		} else if(booleanOperator.contains(op)) {
+			return Constant.BOOLEAN;
+		}
+		return null;
+	}
 }

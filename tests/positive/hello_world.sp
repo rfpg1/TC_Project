@@ -15,27 +15,27 @@ main:Int where main > 2*4 (a:Int[], b:Double){
 	abs(2);
 	pi:Boolean = false;
 	pi1:String = "true\t";
-	pi2:Int = min(2);
-	pi3:Double = pi2*4*3;
+	pi3:Double = z*4*min(z);
+	pi2:Int = 3;
 	pi4:Int = 2;
-	max:Void (adawda:Int, zczsb:Int) {
-		if pi == false {
+	adwadad:Int = max(pi2, pi4);
+	max:Int (adawda:Int, zczsb:Int) {
+		if 5 > 4 {
 			(* TESTE *)
+			a:Int = 2;
 		} else {
-			while      !false {
-				if 2 > 2 {
+			while true {
+				if 1 > 2 {
 					_ola:Int = 3*4; 
-					return ;(* comment *)
+					return 2;(* comment *)
 				}
-				return ;
 			}
 		}
-		return ;
+		return 2;
 	}
 	a;
-	a.get_array()[3];
-	a[3];
-	return pi2;
+	a[2];
+	return z;
 }
 
 kkk:Int = 4;
@@ -47,5 +47,13 @@ min:Int(i:Int) {
 maxi:Int(a:Int, b:Int) {
 	z:Int = min(a);
 	return z;
+}
+
+toString:String() {
+	return "a";
+}
+
+b:Boolean(){
+return false;
 }
 

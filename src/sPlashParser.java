@@ -351,10 +351,10 @@ public class sPlashParser {
 				if(child.getChildCount() > 2) {
 					List<Map<String, Object>> exprValues = new ArrayList<>();
 					map.put(Constant.OPERATOR, child.getChild(1).getText());
-					map.put(Constant.VALUE, exprValues);
+					map.put(Constant.VALUE_BOOLEAN, exprValues);
 					Map<String, Object> expr = new LinkedHashMap<>();
 					exprValues.add(expr);
-					expr.put(Constant.VALUE, new ArrayList<Map<String, Object>>());
+					expr.put(Constant.VALUE_BOOLEAN, new ArrayList<Map<String, Object>>());
 					toJson(child.getChild(2), expr);
 
 				}

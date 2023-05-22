@@ -18,7 +18,7 @@ public class Verifier {
 	
 	@SuppressWarnings("unchecked")
 	public void verify(Context context, List<Map<String, Object>> statements) throws CompilerException {
-		if(statements != null) {
+		if(statements != null) { 
 			for(Map<String, Object> statement : statements) {
 				for(String key : statement.keySet()) {
 					if(key.equals(Constant.VARIABLE)) {
@@ -34,20 +34,6 @@ public class Verifier {
 							}
 							context.setCurrentFunction(null);
 							context.exitScope();
-						}
-					} else if(key.equals(Constant.FUNCTION_CALL)) {
-						if(context.getCurrentFunction() == null) {
-							throw new FunctionException("Function calls can only occur inside a function");
-						}
-						List<Map<String, Object>> funcCalls = (List<Map<String, Object>>) statement.get(key);
-						for(Map<String, Object> call : funcCalls) {
-							List<Map<String, Object>> function = new ArrayList<>();
-							Map<String, Object> f = new LinkedHashMap<>();
-							List<Map<String, Object>> f1 = new ArrayList<>();
-							f1.add(call);
-							f.put(Constant.FUNCTION, f1);
-							function.add(f);
-							checkParams(context, function, null);
 						}
 					} else if(key.equals(Constant.IF_STATEMENT) || key.equals(Constant.WHILE_STATEMENT)) {
 						if(context.getCurrentFunction() == null) {
@@ -74,6 +60,28 @@ public class Verifier {
 				}
 			}
 		}
+		
+		for(Map<String, Object> statement : statements) {
+			for(String key : statement.keySet()) {
+				if(key.equals(Constant.FUNCTION_CALL)) {
+					if(context.getCurrentFunction() == null) {
+						throw new FunctionException("Function calls can only occur inside a function");
+					}
+					List<Map<String, Object>> funcCalls = (List<Map<String, Object>>) statement.get(key);
+					for(Map<String, Object> call : funcCalls) {
+						List<Map<String, Object>> function = new ArrayList<>();
+						Map<String, Object> f = new LinkedHashMap<>();
+						List<Map<String, Object>> f1 = new ArrayList<>();
+						f1.add(call);
+						f.put(Constant.FUNCTION, f1);
+						function.add(f);
+						checkParams(context, function, null);
+					}
+				}
+			}
+		}
+		
+		 
 	}
 
 	@SuppressWarnings("unchecked")
@@ -139,12 +147,15 @@ public class Verifier {
 		String op = (String) ifStatement.get(Constant.OPERATOR);
 		if(valueType.equals(Constant.VARIABLE)) {
 			String varName = (String) ifStatement.get(Constant.BOOLEAN_VALUE);
+			if(!context.hasVarInCurrentScope(varName)) {
+				throw new VariableException("Variable: " + varName + " isn't defined in this scope");
+			}
 			Pair<List<Object>, Object> pair = (Pair<List<Object>, Object>) context.getType(varName);
 			if(pair == null) {
 				throw new VariableException("Variable: " + varName + " doesn't exist");
 			} else {
 				String vType = (String) ((List<Object>) pair.getFirst()).get(0);
-				String bType = getOperatorType(op);
+				String bType = Constant.getOperatorType(op);
 				if(vType.equals(Constant.DOUBLE) || vType.equals(Constant.INT) || vType.equals(Constant.FLOAT)) {
 					if(operator == null) {
 						if(op == null) {
@@ -191,12 +202,12 @@ public class Verifier {
 					}
 				}
 			} else {
-				String bType = getOperatorType(op);
+				String bType = Constant.getOperatorType(op);
 				if(operator == null) {
 					if(!bType.equals(Constant.MATH)) {
 						throw new BooleanException("Condition isn't valid");
 					} else {
-						operator = getOperatorType(op);
+						operator = Constant.getOperatorType(op);
 					}
 				} else {
 					if(bType.equals(Constant.MATH)) {
@@ -215,7 +226,7 @@ public class Verifier {
 					operator = null;
 				}
 			} else {
-				String bType = getOperatorType(op);
+				String bType = Constant.getOperatorType(op);
 				if(operator == null) {
 					if(!bType.equals(Constant.MATH)) {
 						throw new BooleanException("Condition isn't valid");
@@ -238,13 +249,13 @@ public class Verifier {
 					throw new BooleanException("Condition isn't valid");	
 				}
 				if(op != null) {
-					String bType = getOperatorType(op);
+					String bType = Constant.getOperatorType(op);
 					if(!bType.equals(Constant.BOOLEAN)) {
 						throw new BooleanException("Condition isn't valid");	
 					}
 				}
 			} else {
-				String bType = getOperatorType(op);
+				String bType = Constant.getOperatorType(op);
 				if(op != null && (op.equals("==") || op.equals("!="))) {
 					operator = Constant.BOOLEAN;
 				} else if(op != null && bType.equals(Constant.MATH)) {
@@ -276,12 +287,12 @@ public class Verifier {
 							}
 						}
 					} else {
-						String bType = getOperatorType(op);
+						String bType = Constant.getOperatorType(op);
 						if(operator == null) {
 							if(!bType.equals(Constant.MATH)) {
 								throw new BooleanException("Condition isn't valid");
 							} else {
-								operator = getOperatorType(op);
+								operator = Constant.getOperatorType(op);
 							}
 						} else {
 							if(bType.equals(Constant.MATH)) {
@@ -297,13 +308,13 @@ public class Verifier {
 							throw new BooleanException("Condition isn't valid");	
 						}
 						if(op != null) {
-							String bType = getOperatorType(op);
+							String bType = Constant.getOperatorType(op);
 							if(!bType.equals(Constant.BOOLEAN)) {
 								throw new BooleanException("Condition isn't valid");	
 							}
 						}
 					} else {
-						String bType = getOperatorType(op);
+						String bType = Constant.getOperatorType(op);
 						if(op != null && (op.equals("==") || op.equals("!="))) {
 							operator = Constant.BOOLEAN;
 						} else if(op != null && bType.equals(Constant.MATH)) {
@@ -317,7 +328,7 @@ public class Verifier {
 				}
 			}
 		}
-		if(ifStatement.get(Constant.VALUE) instanceof ArrayList) {
+		if(ifStatement.get(Constant.VALUE) instanceof ArrayList && op != null) {
 			Map<String, Object> v = ((List<Map<String, Object>>) ifStatement.get(Constant.VALUE)).get(0);
 			List<Map<String, Object>> l = (List<Map<String, Object>>) v.get(Constant.VALUE);
 			if(l != null) {
@@ -344,17 +355,6 @@ public class Verifier {
 				}
 			}
 		}
-	}
-
-	private String getOperatorType(String op) {
-		List<String> mathOperator = new ArrayList<>(Arrays.asList(Constant.MATH_OPERATOR));
-		List<String> booleanOperator = new ArrayList<>(Arrays.asList(Constant.BOOLEAN_OPERATOR));
-		if(mathOperator.contains(op)) {
-			return Constant.MATH;
-		} else if(booleanOperator.contains(op)) {
-			return Constant.BOOLEAN;
-		}
-		return null;
 	}
 
 	@SuppressWarnings("unchecked")

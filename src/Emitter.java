@@ -92,7 +92,6 @@ public class Emitter {
 	}
 	
 	public void generateFile() throws FileNotFoundException {
-		//TODO
 		StringBuilder bob = new StringBuilder();
 		for(List<String> l : lines) {
 			for(String s : l) {

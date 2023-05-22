@@ -123,7 +123,7 @@ function_call:
 ;
 
 return_statement:
-	RETURN ((VARIABLE|number|string_lit|TRUE|FALSE|expr|function_call))? SEMICOLON comment*?
+	RETURN ((VARIABLE|number|string_lit|TRUE|FALSE|function_call|expr))? SEMICOLON comment*?
 ;
 
 definition:

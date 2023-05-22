@@ -1974,11 +1974,11 @@ public class GrammarParser extends Parser {
 		}
 		public TerminalNode TRUE() { return getToken(GrammarParser.TRUE, 0); }
 		public TerminalNode FALSE() { return getToken(GrammarParser.FALSE, 0); }
-		public ExprContext expr() {
-			return getRuleContext(ExprContext.class,0);
-		}
 		public Function_callContext function_call() {
 			return getRuleContext(Function_callContext.class,0);
+		}
+		public ExprContext expr() {
+			return getRuleContext(ExprContext.class,0);
 		}
 		public Return_statementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -2045,13 +2045,13 @@ public class GrammarParser extends Parser {
 				case 6:
 					{
 					setState(266);
-					expr();
+					function_call();
 					}
 					break;
 				case 7:
 					{
 					setState(267);
-					function_call();
+					expr();
 					}
 					break;
 				}
@@ -3007,7 +3007,7 @@ public class GrammarParser extends Parser {
 		"-\u0001\u0000\u0000\u0000\u0104\u010e\u0005\n\u0000\u0000\u0105\u010d"+
 		"\u0005$\u0000\u0000\u0106\u010d\u0003\u0012\t\u0000\u0107\u010d\u0003"+
 		"\u0014\n\u0000\u0108\u010d\u0005\b\u0000\u0000\u0109\u010d\u0005\t\u0000"+
-		"\u0000\u010a\u010d\u0003\u001e\u000f\u0000\u010b\u010d\u0003,\u0016\u0000"+
+		"\u0000\u010a\u010d\u0003,\u0016\u0000\u010b\u010d\u0003\u001e\u000f\u0000"+
 		"\u010c\u0105\u0001\u0000\u0000\u0000\u010c\u0106\u0001\u0000\u0000\u0000"+
 		"\u010c\u0107\u0001\u0000\u0000\u0000\u010c\u0108\u0001\u0000\u0000\u0000"+
 		"\u010c\u0109\u0001\u0000\u0000\u0000\u010c\u010a\u0001\u0000\u0000\u0000"+
