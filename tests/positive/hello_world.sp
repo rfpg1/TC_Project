@@ -18,6 +18,7 @@ main:Int where main > 2*4 (a:Int[], b:Double){
 	pi3:Double = z*4*min(z);
 	pi2:Int = 3;
 	pi4:Int = 2;
+	pi = true;
 	adwadad:Int = max(pi2, pi4);
 	max:Int (adawda:Int, zczsb:Int) {
 		if 5 > 4 {

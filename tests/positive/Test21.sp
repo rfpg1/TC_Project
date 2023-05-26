@@ -1,9 +1,15 @@
 (* Testing comments * )
 (* Coments work just fine *)
-main:Void() {
-	while false || b() > 2 || false {
-		a:Int = 2;
+main:Void(a:Int[]) {
+	abs:Int where abs > 0 (val:Int)  ;
+	abs(2);
+	b();
+	while false || false {
+		c:Int = 2;
 	}
+	d:Int = 4;
+	d = 5;
+	a[d * 2];
 	return ;
 }
 

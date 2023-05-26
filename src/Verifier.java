@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +93,8 @@ public class Verifier {
 		if(!isArray) {
 			throw new TypeException("Variable: " + varName + " isn't an array");
 		}
+		String type = (String) ((Pair<List<String>, Map<String, Object>>) context.getType(varName)).getFirst().get(0);
+		array.put(Constant.ARRAY_TYPE, type);
 		List<Map<String, Object>> position = (List<Map<String, Object>>) array.get(Constant.VALUE);
 		checkPosition(position, context, varName);
 	}

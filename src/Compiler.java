@@ -142,6 +142,15 @@ public class Compiler {
 				} else if(key.equals(Constant.IF_STATEMENT) || key.equals(Constant.WHILE_STATEMENT)) {
 					Map<String, Object> states = ((List<Map<String, Object>>) statement.get(key)).get(0);
 					addBooleanStatements(states, index, key);
+				} else if(key.equals(Constant.FUNCTION_CALL)) {
+					Map<String, Object> funcCall = ((List<Map<String, Object>>) statement.get(Constant.FUNCTION_CALL)).get(0);
+					addFunctionCall(funcCall, index);
+				} else if(key.equals(Constant.ARRAYS)) {
+					List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(Constant.ARRAYS);
+					addArrays(arrays, index);
+				} else if(key.equals(Constant.DECLARATION)) {
+					List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(Constant.DECLARATION);
+					addDeclaration(arrays, 0);
 				}
 			}
 			
@@ -149,7 +158,124 @@ public class Compiler {
 	}
 
 	@SuppressWarnings("unchecked")
+	private void addDeclaration(List<Map<String, Object>> funcs, int index) {
+		for(Map<String, Object> func : funcs) {
+			String name = (String) func.get(Constant.NAME);
+			String size = (String) ((List<Map<String, Object>>) func.get(Constant.RETURN_TYPE)).get(0).get(Constant.TYPE);
+			size = getSize(size);
+			List<Map<String, Object>> ps = (List<Map<String, Object>>) func.get(Constant.PARAMETERS);
+			String params = getParamsDeclaration(ps);
+			boolean isArray = (boolean) ((List<Map<String, Object>>) func.get(Constant.RETURN_TYPE)).get(0).get(Constant.IS_ARRAY);
+			StringBuilder bob = new StringBuilder();
+			bob.append("declare " + size);
+			if(isArray) {
+				bob.append("*");
+			}
+			bob.append(" @" + name + "(" + params + ") #" + emitter.getFunctionCount());
+			emitter.insert(bob.toString(), index);
+			emitter.incrementFuntionCount();
+		}
+	}
+
+	private String getParamsDeclaration(List<Map<String, Object>> ps) {
+		StringBuilder bob = new StringBuilder();
+		
+		for(int i = 0; i < ps.size(); i++) {
+			Map<String, Object> param = ps.get(i);
+			String type = (String) param.get(Constant.TYPE);
+			String size = getSize(type);
+			boolean isArray = (boolean) param.get(Constant.IS_ARRAY);
+			bob.append(size);
+			if(isArray) {
+				bob.append("*");
+			}
+			if(i + 1 < ps.size()) {
+				bob.append(",");
+			}
+		}
+		return bob.toString();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void addArrays(List<Map<String, Object>> arrays, int index) {
+		for(Map<String, Object> array : arrays) {
+			String size = getSize((String) array.get(Constant.ARRAY_TYPE));
+			String name = (String) array.get(Constant.VARIABLE);
+			if(context.hasVar(name)) {
+				name = emitter.getConst(name);
+			} else {
+				name = emitter.getPointerName(name);
+			}
+			Map<String, Object> pos = ((List<Map<String, Object>>) array.get(Constant.VALUE)).get(0);
+			String position = getPosition(pos, index);
+			String tempVar = "%temp_var" + emitter.getCountVars();
+			emitter.incrementCountVars();
+			emitter.insert(tempVar + " = load " + size + "*, " + size + "** " + name, index);
+			emitter.insert("getelementptr inbounds " + size + ", " + size + "* " + tempVar + ", i32 " + position, index);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private String getPosition(Map<String, Object> expr, int index) {
+		String type = (String) expr.get(Constant.VALUE_TYPE);
+		String v1 = "";
+		if(type.equals(Constant.INT)) {
+			v1 = (String) expr.get(Constant.POSITION_VALUE);
+		} else if(type.equals(Constant.VARIABLE)) {
+			v1 = "%tempV" + emitter.getCountVars();
+			emitter.incrementCountVars();
+			String vName;
+			String varName = (String) expr.get(Constant.POSITION_VALUE);
+			if(context.hasVar(varName)) {
+				vName = emitter.getConst(varName);
+			} else {
+				vName = emitter.getPointerName(varName);
+			}
+			emitter.insert(v1 + " = load i32, i32* " + vName, index);
+		}
+		
+		String op = (String) expr.get(Constant.OPERATOR);
+		if(op != null) {
+			Map<String, Object> map = ((List<Map<String, Object>>) expr.get(Constant.VALUE)).get(0);
+			map = ((List<Map<String, Object>>) map.get(Constant.VALUE)).get(0);
+			String v2 = getPosition(map, index);
+			String str = "%str_value" + emitter.getCountVars();
+			emitter.incrementCountVars();
+			switch(op) {
+			case "*":
+				emitter.insert(str + " = mul i32 " + v1 + " , " + v2);
+				break;
+			case "/":
+				emitter.insert(str + " = sdiv i32 " + v1 + " , " + v2);
+				break;
+			case "+":
+				emitter.insert(str + " = add i32 " + v1 + " , " + v2);
+				break;
+			case "-":
+				emitter.insert(str + " = sub i32 " + v1 + " , " + v2);
+				break;
+			case "%":
+				emitter.insert(str + " = srem i32 " + v1 + " , " + v2);
+				break;
+			}	
+			v1 = str;
+		}
+		return v1;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void addFunctionCall(Map<String, Object> funcCall, int index) {
+		String funcName = (String) funcCall.get(Constant.VARIABLE);
+		List<Map<String, Object>> ps = (List<Map<String, Object>>) funcCall.get(Constant.PARAMETERS);
+		String params = getParamsFunctionCall(ps);
+		String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+		String size = getSize(rType);
+		emitter.insert("call " + size + " @" + funcName + "(" + params + ")", index);
+	}
+
+	@SuppressWarnings("unchecked")
 	private void addBooleanStatements(Map<String, Object> state, int index, String type) {
+		//TODO evaluate not operator
 		String bExpr = "%bExpr_" + emitter.getCountVars();
 		emitter.insert("br label " + bExpr, index);
 		emitter.incrementCountVars();
@@ -351,28 +477,43 @@ public class Compiler {
 	}
 
 	private void addVariable(Map<String, Object> statement, int index) {
-		String size = getSize((String) statement.get(Constant.TYPE));
-		boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
-		if(isArray) {
-			size += "*";
-		}
+		String type = (String) statement.get(Constant.TYPE);
 		String name = (String) statement.get(Constant.NAME);
-		String v = emitter.getPointerName(name);
-		String value = getValue(statement, name, size, index);
-		if(value != null && value.matches("\"(.+?)\"")) {
-			emitter.insert(v + " = alloca " + size, index);
-			String strName = "@.str." + emitter.getStringCount();
-			emitter.incrementStringCount();
-			value = value.substring(1, value.length() - 1);
-			emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
-					+ " x i8] c\"" + value + "\\00\"", 0);
-			emitter.insert("store " + size + " getelementptr inbounds ([" + (value.length() + 1) 
-					+ " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0), " 
-					+ size + "* " + v, index);
+
+		if(type != null) {
+			String size = getSize((String) statement.get(Constant.TYPE));
+			boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
+			if(isArray) {
+				size += "*";
+			}
+			String v = emitter.getPointerName(name);
+			String value = getValue(statement, name, size, index);
+			if(value != null && value.matches("\"(.+?)\"")) {
+				emitter.insert(v + " = alloca " + size, index);
+				String strName = "@.str." + emitter.getStringCount();
+				emitter.incrementStringCount();
+				value = value.substring(1, value.length() - 1);
+				emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
+						+ " x i8] c\"" + value + "\\00\"", 0);
+				emitter.insert("store " + size + " getelementptr inbounds ([" + (value.length() + 1) 
+						+ " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0), " 
+						+ size + "* " + v, index);
+			} else {
+				emitter.insert(v + " = alloca " + size, index);
+				emitter.insert("store " + size + " " + value + ", " + size + "* " + v, index);
+			}
 		} else {
-			emitter.insert(v + " = alloca " + size, index);
-			emitter.insert("store " + size + " " + value + " , " + size + "* " + v, index);
+			String value = getValue(statement, name, null, index);
+			if(context.hasVar(name)) {
+				name = emitter.getConst(name);
+			} else {
+				name = emitter.getPointerName(name);
+			}
+			
+			String size = getSize((String) statement.get(Constant.VALUE_TYPE));
+			emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
 		}
+		
 	}
 
 	private String getParams(List<Map<String, Object>> params) {
@@ -546,19 +687,19 @@ public class Compiler {
 			emitter.incrementCountVars();
 			switch(op) {
 			case "*":
-				emitter.insert(str + " = mul i32 " + v1 + " , " + v2);
+				emitter.insert(str + " = mul i32 " + v1 + " , " + v2, index);
 				break;
 			case "/":
-				emitter.insert(str + " = sdiv i32 " + v1 + " , " + v2);
+				emitter.insert(str + " = sdiv i32 " + v1 + " , " + v2, index);
 				break;
 			case "+":
-				emitter.insert(str + " = add i32 " + v1 + " , " + v2);
+				emitter.insert(str + " = add i32 " + v1 + " , " + v2, index);
 				break;
 			case "-":
-				emitter.insert(str + " = sub i32 " + v1 + " , " + v2);
+				emitter.insert(str + " = sub i32 " + v1 + " , " + v2, index);
 				break;
 			case "%":
-				emitter.insert(str + " = srem i32 " + v1 + " , " + v2);
+				emitter.insert(str + " = srem i32 " + v1 + " , " + v2, index);
 				break;
 			}	
 			v1 = str;

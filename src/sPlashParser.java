@@ -163,7 +163,9 @@ public class sPlashParser {
 			arrays.put(Constant.ARRAYS, arraysList);
 			array = new LinkedHashMap<>();
 			arraysList.add(array);
-			array.put(Constant.VARIABLE, child.getChild(0).getText());
+			String varName = child.getChild(0).getText();
+			array.put(Constant.VARIABLE, varName);
+			
 		}
 
 		if(child.getChildCount() > 5) {
