@@ -375,6 +375,19 @@ public class sPlashParser {
 			} else if(typeExprClass.equals(Constant.NUMBER)) {
 				Token token = ((TerminalNodeImpl) child.getChild(0).getChild(0).getChild(0)).getSymbol();
 				updateMap(token, expr);
+			} else if(typeExprClass.equals(Constant.FUNCTION_CALL)) {
+				expr.put(Constant.VALUE_TYPE, Constant.FUNCTION_CALL);
+				List<Map<String, Object>> exprValuesF = new ArrayList<>();
+				expr.put(Constant.VALUE_FUNC, exprValuesF);
+				Map<String, Object> exprF = new LinkedHashMap<>();
+				exprValuesF.add(exprF);
+				List<Map<String, Object>> funcList = new ArrayList<>();
+				Map<String, Object> funcMap = new LinkedHashMap<>();
+				funcList.add(funcMap);
+				exprF.put(Constant.FUNCTION, funcList);
+				funcMap.put(Constant.VARIABLE, child.getChild(0).getChild(0).getChild(0).getText());
+				
+				updateArgsValue(child.getChild(0).getChild(0).getChild(2), funcMap);
 			}
 			if(child.getChildCount() > 1) {
 				expr.put(Constant.OPERATOR, child.getChild(1).getText());

@@ -110,7 +110,7 @@ position:
 ;
 
 pos:
-	(NUMBER_INT|VARIABLE)
+	(NUMBER_INT|VARIABLE|function_call)
 ;
 
 expression:

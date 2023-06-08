@@ -9,7 +9,7 @@ main:Void(a:Int[]) {
 	}
 	d:Int = 4;
 	d = 5;
-	a[d * 2];
+	a[d * 2 + b()];
 	return ;
 }
 

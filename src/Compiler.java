@@ -232,6 +232,9 @@ public class Compiler {
 				vName = emitter.getPointerName(varName);
 			}
 			emitter.insert(v1 + " = load i32, i32* " + vName, index);
+		} else if(type.equals(Constant.FUNCTION_CALL)) {
+			v1 = getValue(expr, null, null, index);
+			System.out.println("");
 		}
 		
 		String op = (String) expr.get(Constant.OPERATOR);
@@ -511,7 +514,11 @@ public class Compiler {
 			}
 			
 			String size = getSize((String) statement.get(Constant.VALUE_TYPE));
-			emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
+			if(size == null) {
+				emitter.insert("store " + "i32" + " " + value + ", " + "i32" + "* " + name, index);	
+			} else {
+				emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
+			}
 		}
 		
 	}

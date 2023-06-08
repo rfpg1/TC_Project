@@ -112,10 +112,31 @@ public class Verifier {
 			if(!varType.equals(Constant.INT)) {
 				throw new TypeException("When acessing array: " + varName + " position value: " + positionValue + " must be an integer but it is: " + varType);
 			}
+		} else if(valueType.equals(Constant.FUNCTION_CALL)) {
+			List<Map<String, Object>> func = (List<Map<String, Object>>) position.get(0).get(Constant.VALUE_FUNC);
+			checkParams(context, func, varName);
+			checkValidReturn(context, func, Constant.INT);
 		}
 		if(position.get(0).size() > 3) {
 			List<Map<String, Object>> value = (List<Map<String, Object>>) ((List<Map<String, Object>>) position.get(0).get(Constant.VALUE)).get(0).get(Constant.VALUE);
 			checkPosition(value, context, varName);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void checkValidReturn(Context context, List<Map<String, Object>> list, String type) throws FunctionException {
+		List<Map<String, Object>> function = (List<Map<String, Object>>) list.get(0).get(Constant.FUNCTION);
+		String funcName = (String) function.get(0).get(Constant.VARIABLE);
+
+		Pair<List<Map<String, Object>>, Map<String, Object>> func = (Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName);
+		Map<String, Object> returnMap = func.getSecond();
+		String returnType = (String) returnMap.get(Constant.TYPE);
+		if(!returnType.equals(type)) {
+			throw new FunctionException("Function: "+ funcName + " has to return a integer");
+		}
+		boolean isArray = (Boolean) returnMap.get(Constant.IS_ARRAY);
+		if(isArray) {
+			throw new FunctionException("Function: " + funcName + " can't return an array");
 		}
 	}
 
