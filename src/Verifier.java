@@ -24,7 +24,10 @@ public class Verifier {
 		if(statements != null) { 
 			for(Map<String, Object> statement : statements) {
 				for(String key : statement.keySet()) {
-					if(key.equals(Constant.VARIABLE)) {
+					if(key.equals(Constant.DECLARATION)) {
+						String name = (String) ((List<Map<String, Object>>) statement.get(Constant.DECLARATION)).get(0).get(Constant.NAME);
+						context.insertFunction(name);
+					} else if(key.equals(Constant.VARIABLE)) {
 						checkVariable(statement, key, context);
 					} else if(key.equals(Constant.FUNCTION)) {
 						List<Map<String, Object>> fs = (List<Map<String, Object>>) statement.get(key);
@@ -399,7 +402,7 @@ public class Verifier {
 
 	@SuppressWarnings("unchecked")
 	private void checkFunction(Map<String, Object> func, String key, Context context) throws CompilerException {
-
+		context.insertFunction((String) func.get(Constant.NAME));
 		context.setCurrentFunction((String)func.get(Constant.NAME));
 		for(Map<String, Object> param : (List<Map<String, Object>>) func.get(Constant.PARAMETERS)) {
 			String name = (String)param.get(Constant.NAME);
@@ -477,7 +480,11 @@ public class Verifier {
 	private void checkParams(Context context, List<Map<String, Object>> list, String varName) throws CompilerException {
 		List<Map<String, Object>> function = (List<Map<String, Object>>) list.get(0).get(Constant.FUNCTION);
 		String funcName = (String) function.get(0).get(Constant.VARIABLE);
-
+		
+		if(!context.functionInScope(funcName)) {
+			throw new FunctionException("Function: " + funcName + " isn't defined in this scope");
+		}
+		
 		List<Map<String, Object>> params = (List<Map<String, Object>>) function.get(0).get(Constant.PARAMETERS);
 
 		if(funcName.equals(Constant.PRINT_F)) {

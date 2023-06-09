@@ -12,16 +12,24 @@ public class Context {
 
 	private Stack<Map<String, Object>> stack;
 	private Stack<Map<String, Object>> functionStack;
+	private Stack<List<String>> functionScopes;
 	private int head;
 	private List<String> definitions;
 	
 	public Context() {
 		this.stack = new Stack<>();
 		this.stack.push(new LinkedHashMap<>());
+		this.functionScopes = new Stack<>();
+		this.functionScopes.push(new ArrayList<>());
 		this.functionStack = new Stack<>();
 		this.functionStack.push(new LinkedHashMap<>());
 		this.head = 0;
 		this.definitions = new ArrayList<>();
+	}
+	
+	public void insertFunction(String name) {
+		if(!functionScopes.get(head).contains(name))
+			functionScopes.get(head).add(name);
 	}
 	
 	public Object getType(String name) {
@@ -72,11 +80,13 @@ public class Context {
 	public void enterScope() {
 		head++;
 		stack.push(new LinkedHashMap<>());
+		functionScopes.push(new ArrayList<>());
 	}
 	
 	public void exitScope() {
 		head--;
 		stack.pop();
+		functionScopes.pop();
 	}
 
 	public boolean hasFunction(String name) {
@@ -118,5 +128,17 @@ public class Context {
 
 	public Stack<Map<String, Object>> getStack() {
 		return stack;
+	}
+
+	public boolean functionInScope(String funcName) {
+		for(int i = 0; i < functionScopes.size(); i++) {
+			List<String> array = functionScopes.get(i);
+			for(String s : array) {
+				if(s.equals(funcName)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

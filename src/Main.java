@@ -58,6 +58,7 @@ public class Main {
 				if(func != null) {
 					for(Map<String, Object> function : func) {
 						String name = (String)function.get(Constant.NAME);
+						context.insertFunction(name);
 						Map<String, Object> returnType = ((List<Map<String, Object>>) function.get(Constant.RETURN_TYPE)).get(0);
 						List<Map<String, Object>> params = (List<Map<String, Object>>)function.get(Constant.PARAMETERS);
 						List<Map<String, Object>> paramsType = new ArrayList<>();
@@ -110,6 +111,7 @@ public class Main {
 		List<Map<String, Object>> paramsType = new ArrayList<>();
 
 		context.setFunction("printf", new Pair<>(paramsType, returnType));
+		context.insertFunction("printf");
 	}
 
 

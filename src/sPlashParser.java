@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -512,6 +514,35 @@ public class sPlashParser {
 				insertTypeIntoMap(m, p.getChild(i).getChild(1));
 			}
 		}
+		Collections.sort(states, new Comparator<Map<String, Object>>() {
+			@Override
+			@SuppressWarnings("unchecked")
+			public int compare(Map<String, Object> map1, Map<String, Object> map2) {
+				String key1 = map1.keySet().iterator().next();
+                String key2 = map2.keySet().iterator().next();
+                if (key1.equals(Constant.VARIABLE) && !key2.equals(Constant.VARIABLE)) {
+                    return -1; // Map with key "variable" comes first
+                } else if (!key1.equals(Constant.VARIABLE) && key2.equals(Constant.VARIABLE)) {
+                    return 1;
+                } else if (key1.equals(Constant.VARIABLE)) {
+                    Object type1 = ((List<Map<String, Object>>)map1.get(Constant.VARIABLE)).get(0).get(Constant.TYPE);
+                    Object type2 = ((List<Map<String, Object>>)map2.get(Constant.VARIABLE)).get(0).get(Constant.TYPE);
+
+                    if (type1 != null && type2 == null) {
+                        return -1; // Map with non-null "type" comes first
+                    } else if (type1 == null && type2 != null) {
+                        return 1;
+                    }
+                } else if (key1.startsWith(Constant.DECLARATION)) {
+                    return -1; // Declarations come next
+                } else if (key2.startsWith(Constant.DECLARATION)) {
+                    return 1; // Declarations come next
+                } else {
+                    return 0; // Order doesn't matter for other keys
+                }
+				return 0;
+			}
+		});
 	}
 
 	private void updateMapBooleanExpression(Map<String, Object> map, ParseTree p) {
