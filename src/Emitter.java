@@ -24,11 +24,9 @@ public class Emitter {
 	}	
 	
 	public int getCountVars() {
-		return countVars;
-	}
-
-	public void incrementCountVars() {
-		this.countVars++;
+		int r = countVars;
+		countVars++;
+		return r;
 	}
 
 	public void addVar(String var) {
@@ -36,19 +34,15 @@ public class Emitter {
 	}
 	
 	public int getFunctionCount() {
-		return functionCount;
-	}
-
-	public void incrementFuntionCount() {
-		this.functionCount++;
+		int r = functionCount;
+		functionCount++;
+		return r;
 	}
 	
 	public int getStringCount() {
-		return stringCount;
-	}
-
-	public void incrementStringCount() {
-		this.stringCount++;
+		int r = stringCount;
+		stringCount++;
+		return r;
 	}
 
 	public void insert(String line) {

@@ -35,7 +35,6 @@ public class Compiler {
 
 	private void addPreludeFunctions() {
 		emitter.insert("declare void @printf(i8* noundef, ...) #" + emitter.getFunctionCount(), 0);
-		emitter.incrementFuntionCount();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -43,7 +42,6 @@ public class Compiler {
 		String name = (String) func.get(Constant.NAME);
 		String params = getParams((List<Map<String, Object>>) func.get(Constant.PARAMETERS));
 		int fCount = emitter.getFunctionCount();
-		emitter.incrementFuntionCount();
 		String type = (String) ((List<Map<String, Object>>)func.get(Constant.RETURN_TYPE)).get(0).get(Constant.TYPE);
 		String size = getSize(type);
 		emitter.insert("define " + size  + " @" + name + "(" + params + ") #" + fCount + " {");
@@ -98,7 +96,6 @@ public class Compiler {
 				emitter.insert("ret " + size +  " " + value + "\n}", index);
 			} else if(value.matches("\"(.+?)\"")) { //String
 				String strName = "@.str." + emitter.getStringCount();
-				emitter.incrementStringCount();
 				value = value.substring(1, value.length() - 1);
 				emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
 						+ " x i8] c\"" + value + "\\00\"", 0);
@@ -107,11 +104,9 @@ public class Compiler {
 				emitter.insert("\n}", index);
 			} else if(value.contains("%")) { //FuntionCall
 				String temp = "%temp" + emitter.getCountVars();
-				emitter.incrementCountVars();
 				emitter.insert(temp + " = alloca " + size);
 				emitter.insert("store " + size + " " + value + ", " + size + "* " + temp);
 				String newVar = "%ret_" + emitter.getCountVars();
-				emitter.incrementCountVars();
 
 				emitter.insert(newVar + " = load " + size + ", " + size + "* " + temp, index);
 				emitter.insert("ret " + size + " " + newVar + "\n}", index);
@@ -124,7 +119,6 @@ public class Compiler {
 				}
 
 				String newVar = "%ret_" + emitter.getCountVars();
-				emitter.incrementCountVars();
 
 				emitter.insert(newVar + " = load " + size + ", " + size + "* " + varName, index);
 				emitter.insert("ret " + size + " " + newVar + "\n}", index);
@@ -180,7 +174,6 @@ public class Compiler {
 			}
 			bob.append(" @" + name + "(" + params + ") #" + emitter.getFunctionCount());
 			emitter.insert(bob.toString(), index);
-			emitter.incrementFuntionCount();
 		}
 	}
 
@@ -216,7 +209,6 @@ public class Compiler {
 			Map<String, Object> pos = ((List<Map<String, Object>>) array.get(Constant.VALUE)).get(0);
 			String position = getPosition(pos, index);
 			String tempVar = "%temp_var" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			emitter.insert(tempVar + " = load " + size + "*, " + size + "** " + name, index);
 			emitter.insert("getelementptr inbounds " + size + ", " + size + "* " + tempVar + ", i32 " + position, index);
 		}
@@ -230,7 +222,6 @@ public class Compiler {
 			v1 = (String) expr.get(Constant.POSITION_VALUE);
 		} else if(type.equals(Constant.VARIABLE)) {
 			v1 = "%tempV" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			String vName;
 			String varName = (String) expr.get(Constant.POSITION_VALUE);
 			if(context.hasVar(varName)) {
@@ -249,7 +240,6 @@ public class Compiler {
 			map = ((List<Map<String, Object>>) map.get(Constant.VALUE)).get(0);
 			String v2 = getPosition(map, index);
 			String str = "%str_value" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			switch(op) {
 			case "*":
 				emitter.insert(str + " = mul i32 " + v1 + " , " + v2);
@@ -291,14 +281,10 @@ public class Compiler {
 		//TODO evaluate not operator
 		String bExpr = "%bExpr_" + emitter.getCountVars();
 		emitter.insert("br label " + bExpr, index);
-		emitter.incrementCountVars();
 		emitter.insert(bExpr.substring(1, bExpr.length()) + ":", index);
 		String endLabel = "%end_label" + emitter.getCountVars();
-		emitter.incrementCountVars();
 		String ifLabel = "%if_label" + emitter.getCountVars();
-		emitter.incrementCountVars();
 		String elseLabel = "%else_label" + emitter.getCountVars();
-		emitter.incrementCountVars();
 		String var = getBooleanExpr(state, index, null, 0);
 		if(hasIfStatements(state)) {
 			if(hasElseStatement(state)) {
@@ -368,7 +354,6 @@ public class Compiler {
 		String type = (String) state.get(Constant.VALUE_TYPE);
 		String value = "";
 		String tempVar = "%temp_var" + emitter.getCountVars();
-		emitter.incrementCountVars();
 		String op = (String) state.get(Constant.OPERATOR);
 		if(type.equals(Constant.BOOLEAN)) {
 			tempVar = booleanTypeExpr(value, tempVar, index, state);
@@ -387,7 +372,6 @@ public class Compiler {
 			String size = getFunctionSize(state);
 			if(size.equals("i1")) {
 				String temp3 = "%temp_var" + emitter.getCountVars();
-				emitter.incrementCountVars();
 				emitter.insert(temp3 + " = zext i1 " + tempVar + " to i32", index);
 				tempVar = temp3;
 			}
@@ -405,7 +389,6 @@ public class Compiler {
 				v2 = getBooleanExpr(nMap, index, exprVar, 1);
 			}
 			String fTemp = "%result_boolean" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			switchCase(fTemp, tempVar, v2, index, op);
 			List<Map<String, Object>> nnMap = (List<Map<String, Object>>) nMap.get(Constant.VALUE_BOOLEAN);
 			if(nnMap != null && nnMap.size() > 0 && flag == 1) {
@@ -413,7 +396,6 @@ public class Compiler {
 				String s = getBooleanExpr(b, index, exprVar, 1);
 				op = (String) nMap.get(Constant.OPERATOR);
 				String nTemp = "%temp_var" + emitter.getCountVars();
-				emitter.incrementCountVars();
 				switchCase(nTemp, fTemp, s, index, op);
 				fTemp = nTemp;
 			}
@@ -504,7 +486,6 @@ public class Compiler {
 			if(value != null && value.matches("\"(.+?)\"")) {
 				emitter.insert(v + " = alloca " + size, index);
 				String strName = "@.str." + emitter.getStringCount();
-				emitter.incrementStringCount();
 				value = value.substring(1, value.length() - 1);
 				emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
 						+ " x i8] c\"" + value + "\\00\"", 0);
@@ -570,7 +551,6 @@ public class Compiler {
 				String value = getValue(var, name, null, 0);
 				if(value.matches("\"(.+?)\"")) {
 					String strName = "@.str." + emitter.getStringCount();
-					emitter.incrementStringCount();
 					value = value.substring(1, value.length() - 1);
 					emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) + "x i8] c\"" + value + "\\00\"", 0);
 					emitter.insert(v + "= global i8* getelementptr inbounds ([" 
@@ -637,7 +617,6 @@ public class Compiler {
 					bob.append("i32 " + value);
 				} else if(valueType.equals(Constant.VARIABLE)) {
 					String var = "%new_var" + emitter.getCountVars();
-					emitter.incrementCountVars();
 					String varName = (String) param.get(Constant.VALUE);
 					String v;
 					if(context.hasVar(varName) ) {
@@ -649,7 +628,6 @@ public class Compiler {
 					bob.append("i32 " + var);
 				} else if(valueType.equals(Constant.STRING)) {
 					String strName = "@.str." + emitter.getStringCount();
-					emitter.incrementStringCount();
 					String value = (String) param.get(Constant.VALUE);
 					value = value.substring(1, value.length() - 1);
 					emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
@@ -665,7 +643,6 @@ public class Compiler {
 				}
 			} else {
 				String temp = "%temp_" + emitter.getCountVars();
-				emitter.incrementCountVars();
 				Map<String, Object> function = ((List<Map<String,Object>>) param.get(Constant.FUNCTION)).get(0);
 				String funcName = (String) function.get(Constant.VARIABLE);
 				String paramsFunc = getParamsFunctionCall((List<Map<String, Object>>) function.get(Constant.PARAMETERS), index);
@@ -699,7 +676,6 @@ public class Compiler {
 			v1 = (String) expr.get(Constant.EXPRESSION_VALUE);
 		} else if(type.equals(Constant.VARIABLE)) {
 			v1 = "%tempV" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			String vName;
 			String varName = (String) expr.get(Constant.EXPRESSION_VALUE);
 			if(context.hasVar(varName)) {
@@ -718,7 +694,6 @@ public class Compiler {
 			map = ((List<Map<String, Object>>) map.get(Constant.VALUE)).get(0);
 			String v2 = getExprValue(map, v1, op, size, index);
 			String str = "%str_value" + emitter.getCountVars();
-			emitter.incrementCountVars();
 			switch(op) {
 			case "*":
 				emitter.insert(str + " = mul i32 " + v1 + " , " + v2, index);
