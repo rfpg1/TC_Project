@@ -1,9 +1,13 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 import exception.BooleanException;
 import exception.CompilerException;
@@ -14,7 +18,7 @@ import exception.VariableException;
 import utils.Pair;
 
 public class Verifier {
-	
+
 	@SuppressWarnings("unchecked")
 	public void verify(Context context, List<Map<String, Object>> statements) throws CompilerException {
 		if(statements != null) { 
@@ -55,11 +59,25 @@ public class Verifier {
 						for(Map<String, Object> array : arrays) {
 							checkValidArray(array, context);
 						}
+					} else if(key.equals(Constant.FUNCTION_CALL)) {
+						if(context.getCurrentFunction() == null) {
+							throw new FunctionException("Function calls can only occur inside a function");
+						}
+						List<Map<String, Object>> funcCalls = (List<Map<String, Object>>) statement.get(key);
+						for(Map<String, Object> call : funcCalls) {
+							List<Map<String, Object>> function = new ArrayList<>();
+							Map<String, Object> f = new LinkedHashMap<>();
+							List<Map<String, Object>> f1 = new ArrayList<>();
+							f1.add(call);
+							f.put(Constant.FUNCTION, f1);
+							function.add(f);
+							checkParams(context, function, null);
+						}
 					}
 				}
 			}
 		}
-		
+
 		for(Map<String, Object> statement : statements) {
 			for(String key : statement.keySet()) {
 				if(key.equals(Constant.FUNCTION_CALL)) {
@@ -79,8 +97,8 @@ public class Verifier {
 				}
 			}
 		}
-		
-		 
+
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -98,7 +116,7 @@ public class Verifier {
 		List<Map<String, Object>> position = (List<Map<String, Object>>) array.get(Constant.VALUE);
 		checkPosition(position, context, varName);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void checkPosition(List<Map<String, Object>> position, Context context, String varName) throws CompilerException {
 		String valueType = (String) position.get(0).get(Constant.VALUE_TYPE);
@@ -162,7 +180,7 @@ public class Verifier {
 			checkArray(isArray, map, context);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void checkBooleanExpression(Map<String, Object> ifStatement, Context context, String operator) throws CompilerException {
 		String valueType = (String) ifStatement.get(Constant.VALUE_TYPE);
@@ -359,7 +377,7 @@ public class Verifier {
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void checkExpr(Context context, String expr) throws CompilerException {
 		String[] exp = expr.split("\\+|\\*|-|/|%");
@@ -391,12 +409,12 @@ public class Verifier {
 			if(context.hasVarInPreviousScopes(name)) {
 				throw new VariableException("Variable: " + name + " already exists in outer functions");
 			}
-			
+
 			if(context.getCurrentFunction() == null)
 				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, true);
 			else
 				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, false);
-			
+
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
 	}
@@ -461,58 +479,136 @@ public class Verifier {
 		String funcName = (String) function.get(0).get(Constant.VARIABLE);
 
 		List<Map<String, Object>> params = (List<Map<String, Object>>) function.get(0).get(Constant.PARAMETERS);
-		Pair<List<Map<String, Object>>, Map<String, Boolean>> func = (Pair<List<Map<String, Object>>, Map<String, Boolean>>)context.getFunction(funcName);
-		if(func == null) {
-			throw new FunctionException("Function: " + funcName +  " doesn't exist");
-		}
-		List<Map<String, Object>> actualParams = func.getFirst();
-		if(params.size() != actualParams.size()) {
-			throw new FunctionException("Function: " + funcName + " receives: " + actualParams.size() + " params and not " + params.size());
-		}
-		for(int i = 0; i < actualParams.size(); i++) {
-			Map<String, Object> mapParams = (Map<String, Object>)actualParams.get(i);
-			String actualType = (String) mapParams.get(Constant.TYPE);
-			String paramType = (String) params.get(i).get(Constant.VALUE_TYPE);
-			if(paramType == null) {
-				List<Map<String, Object>> functionCallParams = new ArrayList<>();
-				functionCallParams.add(params.get(i));
-				checkParams(context, functionCallParams, varName);
-				Pair<List<Map<String, Object>>, Map<String, Object>> pair = (Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(funcName);
-				String funcReturnType = (String) pair.getSecond().get(Constant.TYPE);
-				if(varName != null) {
-					checkType(actualType, funcReturnType, params.get(i), context);
-				}
-				boolean funcArray = (boolean) pair.getSecond().get(Constant.IS_ARRAY);
-				if(funcArray) {
-					if(!(boolean) actualParams.get(i).get(Constant.VALUE)) {
-						throw new TypeException("Function: " + funcName + " isn't expected to receive an array at parameter: " + i);
+
+		if(funcName.equals(Constant.PRINT_F)) {
+			checkPrintFunction(context, params);
+		} else {
+			Pair<List<Map<String, Object>>, Map<String, Boolean>> func = (Pair<List<Map<String, Object>>, Map<String, Boolean>>)context.getFunction(funcName);
+			if(func == null) {
+				throw new FunctionException("Function: " + funcName +  " doesn't exist");
+			}
+			List<Map<String, Object>> actualParams = func.getFirst();
+			if(params.size() != actualParams.size()) {
+				throw new FunctionException("Function: " + funcName + " receives: " + actualParams.size() + " params and not " + params.size());
+			}
+			for(int i = 0; i < actualParams.size(); i++) {
+				Map<String, Object> mapParams = (Map<String, Object>)actualParams.get(i);
+				String actualType = (String) mapParams.get(Constant.TYPE);
+				String paramType = (String) params.get(i).get(Constant.VALUE_TYPE);
+				if(paramType == null) {
+					List<Map<String, Object>> functionCallParams = new ArrayList<>();
+					functionCallParams.add(params.get(i));
+					checkParams(context, functionCallParams, varName);
+					Pair<List<Map<String, Object>>, Map<String, Object>> pair = (Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(funcName);
+					String funcReturnType = (String) pair.getSecond().get(Constant.TYPE);
+					if(varName != null) {
+						checkType(actualType, funcReturnType, params.get(i), context);
+					}
+					boolean funcArray = (boolean) pair.getSecond().get(Constant.IS_ARRAY);
+					if(funcArray) {
+						if(!(boolean) actualParams.get(i).get(Constant.VALUE)) {
+							throw new TypeException("Function: " + funcName + " isn't expected to receive an array at parameter: " + i);
+						}
+					} else {
+						if((boolean) actualParams.get(i).get(Constant.IS_ARRAY)) {
+							throw new TypeException("Function: " + funcName + " is expected to receive an array at parameter: " + i);
+						}
 					}
 				} else {
-					if((boolean) actualParams.get(i).get(Constant.IS_ARRAY)) {
-						throw new TypeException("Function: " + funcName + " is expected to receive an array at parameter: " + i);
-					}
-				}
-			} else {
-				if(paramType.equals(Constant.VARIABLE)) {
-					String value = (String) params.get(i).get(Constant.VALUE);
-					Pair<Object, Boolean> pair = (Pair<Object, Boolean>) context.getType(value);
-					if(pair == null) {
-						throw new VariableException("Variable: " + value + " used to call function: " + funcName + " doesn't exist");
+					if(paramType.equals(Constant.VARIABLE)) {
+						String value = (String) params.get(i).get(Constant.VALUE);
+						Pair<Object, Boolean> pair = (Pair<Object, Boolean>) context.getType(value);
+						if(pair == null) {
+							throw new VariableException("Variable: " + value + " used to call function: " + funcName + " doesn't exist");
+						} else {
+							boolean actualIsArray = (boolean) mapParams.get(Constant.IS_ARRAY);
+							checkArray(actualIsArray, params.get(i), context);
+						}
 					} else {
 						boolean actualIsArray = (boolean) mapParams.get(Constant.IS_ARRAY);
-						checkArray(actualIsArray, params.get(i), context);
-					}
-				} else {
-					boolean actualIsArray = (boolean) mapParams.get(Constant.IS_ARRAY);
 
-					if(actualIsArray) {
-						String value = (String) params.get(i).get(Constant.VALUE);
-						throw new VariableException("Value: " + value +" used to call function: " + funcName + " isn't an array and it is expected to be");
+						if(actualIsArray) {
+							String value = (String) params.get(i).get(Constant.VALUE);
+							throw new VariableException("Value: " + value +" used to call function: " + funcName + " isn't an array and it is expected to be");
+						}
+					}
+					checkType(actualType, paramType, params.get(i), context);
+				}
+			}	
+		}
+
+
+	}
+
+	private void checkPrintFunction(Context context, List<Map<String, Object>> params) throws CompilerException {
+		if(params.size() > 0) {
+			String firstParamType = (String) params.get(0).get(Constant.VALUE_TYPE);
+			if(!firstParamType.equals(Constant.STRING)) {
+				if(params.size() > 1) {
+					throw new FunctionException("Printf function can't be called with more than one parameter if the first one isn't a string");
+				}
+			} else {
+				String firstParamValue = (String) params.get(0).get(Constant.VALUE);
+				int paramsSize = 1;
+				for(String placeHolder : Constant.PLACE_HOLDERS) {
+					paramsSize += StringUtils.countMatches(firstParamValue, placeHolder);
+				}
+				if(paramsSize != params.size()) {
+					throw new FunctionException("Printf function has invalid number of parameters");
+				}
+				List<Pair<String, Integer>> positions = new ArrayList<>();
+				for(String placeHolder : Constant.PLACE_HOLDERS) {
+					int index = firstParamValue.indexOf(placeHolder);
+					while (index >= 0) {
+						positions.add(new Pair<>(placeHolder, index));
+						index = firstParamValue.indexOf(placeHolder, index + 1);
 					}
 				}
-				checkType(actualType, paramType, params.get(i), context);
+				sortPositions(positions);
+				checkPrintParams(context, params, positions);
 			}
 		}
+	}
+
+	private void checkPrintParams(Context context, List<Map<String, Object>> params,
+			List<Pair<String, Integer>> positions) throws CompilerException {
+		int i = 0;
+		int index = 0;
+		for(Map<String, Object> param : params) {
+			if(i == 0) {
+				i++;
+				continue;
+			} else {
+				String expectedType = getType(positions.get(index));
+				String actualType = (String) param.get(Constant.VALUE_TYPE);
+				if(!expectedType.equals(actualType)) {
+					throw new TypeException(positions.get(index).getFirst() + " is trying to refer to a: " + expectedType + " and got: " + actualType);
+				}
+				index++;
+			}
+		}
+	}
+
+	private String getType(Pair<String, Integer> pair) {
+		String type = pair.getFirst();
+		switch(type) {
+		case "%s":
+			return Constant.STRING;
+		case "%i":
+			return Constant.INT;
+		case "%f":
+			return Constant.DOUBLE;
+		}
+		return null;
+	}
+
+	private void sortPositions(List<Pair<String, Integer>> positions) {
+		Collections.sort(positions, new Comparator<Pair<String, Integer>>() {
+            @Override
+            public int compare(Pair<String, Integer> pair1, Pair<String, Integer> pair2) {
+                return pair1.getSecond().compareTo(pair2.getSecond());
+            }
+        });
 	}
 
 	@SuppressWarnings("unchecked")

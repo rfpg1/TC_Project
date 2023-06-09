@@ -58,7 +58,7 @@ number:
 ;
 
 string_lit:
-	ASPAS (ANYCHAR|number|operator|VARIABLE|TRUE|FALSE)* ASPAS
+	ASPAS (ANYCHAR|number|operator|VARIABLE|TRUE|FALSE|MATH_OPERATOR)* ASPAS
 ;
 
 statement:

@@ -19,6 +19,7 @@ public class Compiler {
 	public void compileToLLVM() throws FileNotFoundException {
 		if(tree != null) {
 			addConstants();
+			addPreludeFunctions();
 			for(Map<String, Object> func : tree) {
 				if(func.containsKey(Constant.FUNCTION)) {
 					for(Map<String, Object> map : (List<Map<String, Object>>) func.get(Constant.FUNCTION)) {
@@ -30,6 +31,11 @@ public class Compiler {
 
 		}
 		emitter.generateFile();
+	}
+
+	private void addPreludeFunctions() {
+		emitter.insert("declare void @printf(i8* noundef, ...) #" + emitter.getFunctionCount(), 0);
+		emitter.incrementFuntionCount();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -143,8 +149,9 @@ public class Compiler {
 					Map<String, Object> states = ((List<Map<String, Object>>) statement.get(key)).get(0);
 					addBooleanStatements(states, index, key);
 				} else if(key.equals(Constant.FUNCTION_CALL)) {
-					Map<String, Object> funcCall = ((List<Map<String, Object>>) statement.get(Constant.FUNCTION_CALL)).get(0);
-					addFunctionCall(funcCall, index);
+					for(Map<String, Object> funcCall : (List<Map<String, Object>>) statement.get(Constant.FUNCTION_CALL)) {
+						addFunctionCall(funcCall, index);
+					}					
 				} else if(key.equals(Constant.ARRAYS)) {
 					List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(Constant.ARRAYS);
 					addArrays(arrays, index);
@@ -234,7 +241,6 @@ public class Compiler {
 			emitter.insert(v1 + " = load i32, i32* " + vName, index);
 		} else if(type.equals(Constant.FUNCTION_CALL)) {
 			v1 = getValue(expr, null, null, index);
-			System.out.println("");
 		}
 		
 		String op = (String) expr.get(Constant.OPERATOR);
@@ -270,10 +276,14 @@ public class Compiler {
 	private void addFunctionCall(Map<String, Object> funcCall, int index) {
 		String funcName = (String) funcCall.get(Constant.VARIABLE);
 		List<Map<String, Object>> ps = (List<Map<String, Object>>) funcCall.get(Constant.PARAMETERS);
-		String params = getParamsFunctionCall(ps);
+		String params = getParamsFunctionCall(ps, index);
 		String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 		String size = getSize(rType);
-		emitter.insert("call " + size + " @" + funcName + "(" + params + ")", index);
+		if(funcName.equals(Constant.PRINT_F)) {
+			emitter.insert("call " + size + "(i8*, ...) @" + funcName + "(" + params + ")", index);
+		} else {
+			emitter.insert("call " + size + " @" + funcName + "(" + params + ")", index);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -530,15 +540,17 @@ public class Compiler {
 			String name = (String) param.get(Constant.NAME);
 			name = "%" + name;
 			Object o = param.get(Constant.IS_ARRAY);
+			String type = (String) param.get(Constant.TYPE);
+			String size = getSize(type);
 			if(o != null) {
 				boolean isArray = (boolean) o;
 				if(isArray) {
-					bob.append("i32* " + name);
+					bob.append(size + "* " + name);
 				} else {
-					bob.append("i32 " + name);
+					bob.append(size + " " + name);
 				}
 			} else {
-				bob.append("i32 " + name);
+				bob.append(size + " " + name);
 			}
 
 			if(i + 1 < params.size()) {
@@ -584,7 +596,7 @@ public class Compiler {
 				Map<String, Object> func = ((List<Map<String, Object>>)((List<Map<String, Object>>) child.get(Constant.VALUE_FUNC)).get(0)
 						.get(Constant.FUNCTION)).get(0);
 				String funcName = (String) func.get(Constant.VARIABLE);
-				String params = getParamsFunctionCall((List<Map<String, Object>>) func.get(Constant.PARAMETERS));
+				String params = getParamsFunctionCall((List<Map<String, Object>>) func.get(Constant.PARAMETERS), index);
 				String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 				size = getSize(rType);
 				emitter.insert(v1 + " = call " + size + " @" + funcName + "(" + params + ")", index);
@@ -613,7 +625,7 @@ public class Compiler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private String getParamsFunctionCall(List<Map<String, Object>> params) {
+	private String getParamsFunctionCall(List<Map<String, Object>> params, int index) {
 		StringBuilder bob = new StringBuilder();
 		for(int i = 0; i < params.size(); i++) {
 			Map<String, Object> param = params.get(i);
@@ -635,13 +647,28 @@ public class Compiler {
 					}
 					emitter.insert(var + " = load i32, i32* " + v);
 					bob.append("i32 " + var);
+				} else if(valueType.equals(Constant.STRING)) {
+					String strName = "@.str." + emitter.getStringCount();
+					emitter.incrementStringCount();
+					String value = (String) param.get(Constant.VALUE);
+					value = value.substring(1, value.length() - 1);
+					emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
+							+ " x i8] c\"" + value + "\\00\"", 0);
+					bob.append("i8* getelementptr inbounds ([" + (value.length() + 1) + " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0)");
+				} else if(valueType.equals(Constant.BOOLEAN)) {
+					String value = (String) param.get(Constant.VALUE);
+					if(value.equals(Constant.FALSE)) {
+						bob.append("i1 0");
+					} else {
+						bob.append("i1 1");
+					}
 				}
 			} else {
 				String temp = "%temp_" + emitter.getCountVars();
 				emitter.incrementCountVars();
 				Map<String, Object> function = ((List<Map<String,Object>>) param.get(Constant.FUNCTION)).get(0);
 				String funcName = (String) function.get(Constant.VARIABLE);
-				String paramsFunc = getParamsFunctionCall((List<Map<String, Object>>) function.get(Constant.PARAMETERS));
+				String paramsFunc = getParamsFunctionCall((List<Map<String, Object>>) function.get(Constant.PARAMETERS), index);
 				emitter.insert(temp + " = call i32 @" + funcName + "(" + paramsFunc + ")");
 				bob.append("i32 " + temp);
 			}

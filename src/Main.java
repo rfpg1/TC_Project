@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,18 @@ public class Main {
 				}
 			}
 		}
+		addPreludeFunctions(context);
 	}
+
+	private static void addPreludeFunctions(Context context) {
+		Map<String, Object> returnType = new HashMap<>();
+		returnType.put(Constant.TYPE, Constant.VOID);
+		returnType.put(Constant.IS_ARRAY, false);
+		List<Map<String, Object>> paramsType = new ArrayList<>();
+
+		context.setFunction("printf", new Pair<>(paramsType, returnType));
+	}
+
 
 	private static boolean containsFlag(String[] args, String flag) {
 		for (int i = 0; i < args.length; i++) {

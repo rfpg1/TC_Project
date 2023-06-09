@@ -57,6 +57,9 @@ public class Constant {
 	public static final String[] MATH_OPERATOR = {"*", "+", "-", "/", "%", "<", ">", ">=", "<=", "=="};
 	public static final String[] BOOLEAN_OPERATOR = {"&&", "||"};
 	
+	public static final String PRINT_F = "printf";
+	public static final String[] PLACE_HOLDERS = {"%s", "%i", "%f", "%d"};
+	
 	public static String getOperatorType(String op) {
 		List<String> mathOperator = new ArrayList<>(Arrays.asList(Constant.MATH_OPERATOR));
 		List<String> booleanOperator = new ArrayList<>(Arrays.asList(Constant.BOOLEAN_OPERATOR));
