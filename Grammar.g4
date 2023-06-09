@@ -156,7 +156,7 @@ args_def:
 ;
 
 args_value:
-	(function_call|number|string_lit|TRUE|FALSE|VARIABLE) (COMMA (function_call|number|string_lit|TRUE|FALSE|VARIABLE))*
+	(function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr) (COMMA (function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr))*
 ;
 
 operator:

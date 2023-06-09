@@ -154,7 +154,7 @@ public class Compiler {
 					addDeclaration(arrays, 0);
 				}
 			}
-			
+
 		}
 	}
 
@@ -179,7 +179,7 @@ public class Compiler {
 
 	private String getParamsDeclaration(List<Map<String, Object>> ps) {
 		StringBuilder bob = new StringBuilder();
-		
+
 		for(int i = 0; i < ps.size(); i++) {
 			Map<String, Object> param = ps.get(i);
 			String type = (String) param.get(Constant.TYPE);
@@ -233,7 +233,7 @@ public class Compiler {
 		} else if(type.equals(Constant.FUNCTION_CALL)) {
 			v1 = getValue(expr, null, null, index);
 		}
-		
+
 		String op = (String) expr.get(Constant.OPERATOR);
 		if(op != null) {
 			Map<String, Object> map = ((List<Map<String, Object>>) expr.get(Constant.VALUE)).get(0);
@@ -331,7 +331,7 @@ public class Compiler {
 				emitter.insert("br i1 " + var + ", label " + endLabel + ", label " + endLabel, index);
 			}
 		}	
-		
+
 		emitter.insert(endLabel.substring(1, endLabel.length()) + ":", index);
 
 	}
@@ -377,7 +377,7 @@ public class Compiler {
 			}
 		} else if(type.equals(Constant.EXPR)) {
 			tempVar  = getValue(state, null, null, index);
-			
+
 		}
 		if(op != null) {
 			Map<String, Object> nMap = ((List<Map<String, Object>>) state.get(Constant.VALUE_BOOLEAN)).get(0);
@@ -453,9 +453,9 @@ public class Compiler {
 	private String booleanTypeExpr(String value, String tempVar, int index, Map<String, Object> state) {
 		value = getBooleanValue((String)state.get(Constant.BOOLEAN_VALUE));
 		emitter.insert(tempVar + " = icmp eq i32 " + value + ", 1", index);
-		
+
 		return tempVar;
-		
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -503,7 +503,7 @@ public class Compiler {
 			} else {
 				name = emitter.getPointerName(name);
 			}
-			
+
 			String size = getSize((String) statement.get(Constant.VALUE_TYPE));
 			if(size == null) {
 				emitter.insert("store " + "i32" + " " + value + ", " + "i32" + "* " + name, index);	
@@ -511,7 +511,7 @@ public class Compiler {
 				emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
 			}
 		}
-		
+
 	}
 
 	private String getParams(List<Map<String, Object>> params) {
@@ -640,6 +640,10 @@ public class Compiler {
 					} else {
 						bob.append("i1 1");
 					}
+				} else if(valueType.equals(Constant.EXPR)) {
+					Map<String, Object> expr = ((List<Map<String, Object>>)param.get(Constant.VALUE)).get(0);
+					String value = getExprValue(expr, null, null, null, index);
+					bob.append("i32 " + value);
 				}
 			} else {
 				String temp = "%temp_" + emitter.getCountVars();
@@ -672,8 +676,17 @@ public class Compiler {
 	private String getExprValue(Map<String, Object> expr, String tempPointer, String operator, String size, int index) {
 		String type = (String) expr.get(Constant.VALUE_TYPE);
 		String v1 = "";
-		if(type.equals(Constant.DOUBLE) || type.equals(Constant.INT) || type.equals(Constant.FLOAT)) {
+		if(type.equals(Constant.INT)) {
 			v1 = (String) expr.get(Constant.EXPRESSION_VALUE);
+		} else if(type.equals(Constant.DOUBLE) || type.equals(Constant.FLOAT)) {
+			String tempVar = "%temp_var" + emitter.getCountVars();
+			String value  = (String) expr.get(Constant.EXPRESSION_VALUE);
+			emitter.insert(tempVar + " = alloca double", index);
+			emitter.insert("store double " + value + ", double* " + tempVar, index);
+			String intResult = "%load_double" + emitter.getCountVars();
+			emitter.insert(intResult + " = load double, double* " + tempVar, index);
+			v1 = "%temp_var" + emitter.getCountVars();
+			emitter.insert(v1 + " = fptosi double " +  intResult + " to i32", index);
 		} else if(type.equals(Constant.VARIABLE)) {
 			v1 = "%tempV" + emitter.getCountVars();
 			String vName;

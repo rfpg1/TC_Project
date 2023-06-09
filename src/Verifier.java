@@ -544,9 +544,7 @@ public class Verifier {
 		if(params.size() > 0) {
 			String firstParamType = (String) params.get(0).get(Constant.VALUE_TYPE);
 			if(!firstParamType.equals(Constant.STRING)) {
-				if(params.size() > 1) {
-					throw new FunctionException("Printf function can't be called with more than one parameter if the first one isn't a string");
-				}
+				throw new FunctionException("First parameter of printf has to be a function");
 			} else {
 				String firstParamValue = (String) params.get(0).get(Constant.VALUE);
 				int paramsSize = 1;
@@ -570,6 +568,7 @@ public class Verifier {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private void checkPrintParams(Context context, List<Map<String, Object>> params,
 			List<Pair<String, Integer>> positions) throws CompilerException {
 		int i = 0;
@@ -581,6 +580,10 @@ public class Verifier {
 			} else {
 				String expectedType = getType(positions.get(index));
 				String actualType = (String) param.get(Constant.VALUE_TYPE);
+				if(actualType.equals(Constant.EXPR)) {
+					Map<String, Object> expr = ((List<Map<String, Object>>)param.get(Constant.VALUE)).get(0);
+					actualType = getValueType(expr, null, null, false);
+				}
 				if(!expectedType.equals(actualType)) {
 					throw new TypeException(positions.get(index).getFirst() + " is trying to refer to a: " + expectedType + " and got: " + actualType);
 				}
@@ -596,19 +599,21 @@ public class Verifier {
 			return Constant.STRING;
 		case "%i":
 			return Constant.INT;
-		case "%f":
+		case "%d":
 			return Constant.DOUBLE;
+		case "%f":
+			return Constant.FLOAT;
 		}
 		return null;
 	}
 
 	private void sortPositions(List<Pair<String, Integer>> positions) {
 		Collections.sort(positions, new Comparator<Pair<String, Integer>>() {
-            @Override
-            public int compare(Pair<String, Integer> pair1, Pair<String, Integer> pair2) {
-                return pair1.getSecond().compareTo(pair2.getSecond());
-            }
-        });
+			@Override
+			public int compare(Pair<String, Integer> pair1, Pair<String, Integer> pair2) {
+				return pair1.getSecond().compareTo(pair2.getSecond());
+			}
+		});
 	}
 
 	@SuppressWarnings("unchecked")

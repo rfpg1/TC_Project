@@ -2,9 +2,10 @@
 (* Coments work just fine *)
 
 main:Void(a:Int[]) {
-	a(false);
+	printf("%d", 2*2.0);
+	a(2*2.0);
 	printf("a %i %s %i", 1, "a", 3);
-	abs:Int where abs > 0 (val:Int)  ;
+	abs:Int where abs > 0 (val:Int);
 	abs(2);
 	b();
 	while false || false {
@@ -20,6 +21,6 @@ b:Int() {
 	return 2;
 }
 
-a:Boolean(c:Boolean) {
-	return false;
+a:Double(c:Double) {
+	return c;
 }
