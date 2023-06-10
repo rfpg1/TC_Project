@@ -6,16 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
-
 import exception.BooleanException;
 import exception.CompilerException;
 import exception.FunctionException;
 import exception.InvalidReturnException;
 import exception.TypeException;
 import exception.VariableException;
-import utils.Pair;
+import utils.Triple;
 
 public class Verifier {
 
@@ -110,11 +108,13 @@ public class Verifier {
 		if(!context.hasVar(varName)) {
 			throw new VariableException("Variable: " + varName + " doesn't exist");
 		}
-		boolean isArray = ((Pair<Object, Boolean>)context.getType(varName)).getSecond();
-		if(!isArray) {
+		boolean isArray = ((Triple<Object, Boolean, Boolean>)context.getType(varName)).getSecond();
+		boolean isMatrix = ((Triple<Object, Boolean, Boolean>)context.getType(varName)).getThird();
+
+		if(!isArray && !isMatrix) {
 			throw new TypeException("Variable: " + varName + " isn't an array");
 		}
-		String type = (String) ((Pair<List<String>, Map<String, Object>>) context.getType(varName)).getFirst().get(0);
+		String type = (String) ((Triple<List<String>, Map<String, Object>, Object>) context.getType(varName)).getFirst().get(0);
 		array.put(Constant.ARRAY_TYPE, type);
 		List<Map<String, Object>> position = (List<Map<String, Object>>) array.get(Constant.VALUE);
 		checkPosition(position, context, varName);
@@ -125,7 +125,7 @@ public class Verifier {
 		String valueType = (String) position.get(0).get(Constant.VALUE_TYPE);
 		String positionValue = (String) position.get(0).get(Constant.POSITION_VALUE);
 		if(valueType.equals(Constant.VARIABLE)) {
-			Pair<List<Object>, Boolean> pair = (Pair<List<Object>, Boolean>) context.getType(positionValue);
+			Triple<List<Object>, Boolean, Object> pair = (Triple<List<Object>, Boolean, Object>) context.getType(positionValue);
 			if(pair == null) {
 				throw new VariableException("Variable: " + positionValue + " doesn't exist");
 			}
@@ -149,7 +149,7 @@ public class Verifier {
 		List<Map<String, Object>> function = (List<Map<String, Object>>) list.get(0).get(Constant.FUNCTION);
 		String funcName = (String) function.get(0).get(Constant.VARIABLE);
 
-		Pair<List<Map<String, Object>>, Map<String, Object>> func = (Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName);
+		Triple<List<Map<String, Object>>, Map<String, Object>, Object> func = (Triple<List<Map<String, Object>>, Map<String, Object>, Object>)context.getFunction(funcName);
 		Map<String, Object> returnMap = func.getSecond();
 		String returnType = (String) returnMap.get(Constant.TYPE);
 		if(!returnType.equals(type)) {
@@ -167,7 +167,7 @@ public class Verifier {
 		if(currentFunction == null) {
 			throw new InvalidReturnException("Trying to return something without declaring a function");
 		}
-		Pair<List<Map<String, Object>>, Map<String, Object>> pair = (Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(currentFunction);
+		Triple<List<Map<String, Object>>, Map<String, Object>, Object> pair = (Triple<List<Map<String, Object>>, Map<String, Object>, Object>) context.getFunction(currentFunction);
 		boolean isArray = (boolean) pair.getSecond().get(Constant.IS_ARRAY);
 		String valueType = getValueType(map, null, context, isArray);
 		String actualType = (String) pair.getSecond().get(Constant.TYPE);
@@ -175,7 +175,7 @@ public class Verifier {
 			List<Map<String, Object>> params = (List<Map<String, Object>>) map.get(Constant.VALUE_FUNC);
 			String funcName = (String) ((List<Map<String, Object>>)params.get(0).get(Constant.FUNCTION)).get(0).get(Constant.VARIABLE);
 			checkParams(context, params, null);
-			Map<String, Object> returnStatement = ((Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+			Map<String, Object> returnStatement = ((Triple<List<Map<String, Object>>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 			valueType = (String) returnStatement.get(Constant.TYPE);
 		}
 		checkType(actualType, valueType, map, context);
@@ -193,7 +193,7 @@ public class Verifier {
 			if(!context.hasVarInCurrentScope(varName)) {
 				throw new VariableException("Variable: " + varName + " isn't defined in this scope");
 			}
-			Pair<List<Object>, Object> pair = (Pair<List<Object>, Object>) context.getType(varName);
+			Triple<List<Object>, Object, Object> pair = (Triple<List<Object>, Object, Object>) context.getType(varName);
 			if(pair == null) {
 				throw new VariableException("Variable: " + varName + " doesn't exist");
 			} else {
@@ -312,7 +312,7 @@ public class Verifier {
 			List<Map<String, Object>> params = (List<Map<String, Object>>) ifStatement.get(Constant.VALUE_FUNC);
 			String funcName = (String) ((List<Map<String, Object>>)params.get(0).get(Constant.FUNCTION)).get(0).get(Constant.VARIABLE);
 			checkParams(context, params, null);
-			Map<String, Object> returnStatement = ((Pair<List<Map<String, Object>>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+			Map<String, Object> returnStatement = ((Triple<List<Map<String, Object>>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 			boolean isArray = (boolean)returnStatement.get(Constant.IS_ARRAY);
 			if(isArray) {
 				throw new TypeException("Function: " + funcName + " returns an array and they aren't allowed in boolean expressions");
@@ -388,7 +388,7 @@ public class Verifier {
 		for(String s : exp) {
 			Matcher matcher = pattern.matcher(s);
 			if(!matcher.find()) {
-				Pair<Object, Boolean> pair = (Pair<Object, Boolean>) context.getType(s);
+				Triple<Object, Boolean, Object> pair = (Triple<Object, Boolean, Object>) context.getType(s);
 				if(pair == null) {
 					throw new VariableException("Variable: " + s + " doesn't exist");
 				}
@@ -406,6 +406,8 @@ public class Verifier {
 		context.setCurrentFunction((String)func.get(Constant.NAME));
 		for(Map<String, Object> param : (List<Map<String, Object>>) func.get(Constant.PARAMETERS)) {
 			String name = (String)param.get(Constant.NAME);
+			boolean isArray = (boolean) param.get(Constant.IS_ARRAY);
+			boolean isMatrix = (boolean) param.get(Constant.IS_MATRIX);
 			if(context.hasVarInCurrentScope(name)) {
 				throw new VariableException("Variable: " + name + " already exists in this scope");
 			}
@@ -414,9 +416,9 @@ public class Verifier {
 			}
 
 			if(context.getCurrentFunction() == null)
-				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, true);
+				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, true);
 			else
-				context.setType(name, (String) param.get(Constant.TYPE), (boolean)param.get(Constant.IS_ARRAY), null, false);
+				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, false);
 
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
@@ -431,11 +433,12 @@ public class Verifier {
 			if(!context.hasVar(name)) {
 				throw new VariableException("Variable: " + name + " doesn't exist");
 			} else {
-				boolean isArray = ((Pair<Object, Boolean>)context.getType(name)).getSecond();
+				boolean isArray = ((Triple<Object, Boolean, Object>)context.getType(name)).getSecond();
 				checkArray(isArray, variable, context);
 			}
 		} else {
 			boolean isArray = (boolean) variable.get(Constant.IS_ARRAY);
+			boolean isMatrix = (boolean) variable.get(Constant.IS_MATRIX);
 			if(context.hasVarInCurrentScope(name)) {
 				throw new VariableException("Variable: " + name + " already exists");
 			} else {
@@ -460,17 +463,17 @@ public class Verifier {
 						checkParams(context, (List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC), name);
 					}
 					if(context.getCurrentFunction() == null)
-						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value, true);
+						context.setType(name, type, isArray, isMatrix, value, true);
 					else
-						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), value, false);
+						context.setType(name, type, isArray, isMatrix, value, false);
 				} else {
 					String valueType = (String) variable.get(Constant.VALUE_TYPE);
 					checkType(type, valueType, variable, context);
 					checkArray(isArray, variable, context);
 					if(context.getCurrentFunction() == null)
-						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v, true);
+						context.setType(name, type, isArray, isMatrix, v, true);
 					else
-						context.setType(name, type, (boolean)variable.get(Constant.IS_ARRAY), v, false);
+						context.setType(name, type, isArray, isMatrix, v, false);
 				}
 			}
 		}
@@ -490,7 +493,7 @@ public class Verifier {
 		if(funcName.equals(Constant.PRINT_F)) {
 			checkPrintFunction(context, params);
 		} else {
-			Pair<List<Map<String, Object>>, Map<String, Boolean>> func = (Pair<List<Map<String, Object>>, Map<String, Boolean>>)context.getFunction(funcName);
+			Triple<List<Map<String, Object>>, Map<String, Boolean>, Object> func = (Triple<List<Map<String, Object>>, Map<String, Boolean>, Object>)context.getFunction(funcName);
 			if(func == null) {
 				throw new FunctionException("Function: " + funcName +  " doesn't exist");
 			}
@@ -506,7 +509,7 @@ public class Verifier {
 					List<Map<String, Object>> functionCallParams = new ArrayList<>();
 					functionCallParams.add(params.get(i));
 					checkParams(context, functionCallParams, varName);
-					Pair<List<Map<String, Object>>, Map<String, Object>> pair = (Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(funcName);
+					Triple<List<Map<String, Object>>, Map<String, Object>, Object> pair = (Triple<List<Map<String, Object>>, Map<String, Object>, Object>) context.getFunction(funcName);
 					String funcReturnType = (String) pair.getSecond().get(Constant.TYPE);
 					if(varName != null) {
 						checkType(actualType, funcReturnType, params.get(i), context);
@@ -524,7 +527,7 @@ public class Verifier {
 				} else {
 					if(paramType.equals(Constant.VARIABLE)) {
 						String value = (String) params.get(i).get(Constant.VALUE);
-						Pair<Object, Boolean> pair = (Pair<Object, Boolean>) context.getType(value);
+						Triple<Object, Boolean, Object> pair = (Triple<Object, Boolean, Object>) context.getType(value);
 						if(pair == null) {
 							throw new VariableException("Variable: " + value + " used to call function: " + funcName + " doesn't exist");
 						} else {
@@ -561,11 +564,11 @@ public class Verifier {
 				if(paramsSize != params.size()) {
 					throw new FunctionException("Printf function has invalid number of parameters");
 				}
-				List<Pair<String, Integer>> positions = new ArrayList<>();
+				List<Triple<String, Integer, Object>> positions = new ArrayList<>();
 				for(String placeHolder : Constant.PLACE_HOLDERS) {
 					int index = firstParamValue.indexOf(placeHolder);
 					while (index >= 0) {
-						positions.add(new Pair<>(placeHolder, index));
+						positions.add(new Triple<>(placeHolder, index, null));
 						index = firstParamValue.indexOf(placeHolder, index + 1);
 					}
 				}
@@ -577,7 +580,7 @@ public class Verifier {
 
 	@SuppressWarnings("unchecked")
 	private void checkPrintParams(Context context, List<Map<String, Object>> params,
-			List<Pair<String, Integer>> positions) throws CompilerException {
+			List<Triple<String, Integer, Object>> positions) throws CompilerException {
 		int i = 0;
 		int index = 0;
 		for(Map<String, Object> param : params) {
@@ -599,7 +602,7 @@ public class Verifier {
 		}
 	}
 
-	private String getType(Pair<String, Integer> pair) {
+	private String getType(Triple<String, Integer, Object> pair) {
 		String type = pair.getFirst();
 		switch(type) {
 		case "%s":
@@ -614,10 +617,10 @@ public class Verifier {
 		return null;
 	}
 
-	private void sortPositions(List<Pair<String, Integer>> positions) {
-		Collections.sort(positions, new Comparator<Pair<String, Integer>>() {
+	private void sortPositions(List<Triple<String, Integer, Object>> positions) {
+		Collections.sort(positions, new Comparator<Triple<String, Integer, Object>>() {
 			@Override
-			public int compare(Pair<String, Integer> pair1, Pair<String, Integer> pair2) {
+			public int compare(Triple<String, Integer, Object> pair1, Triple<String, Integer, Object> pair2) {
 				return pair1.getSecond().compareTo(pair2.getSecond());
 			}
 		});
@@ -632,14 +635,14 @@ public class Verifier {
 			} else {
 				if(valueType.equals(Constant.VARIABLE)) {
 					String varName = (String) variable.get(Constant.VALUE);
-					boolean o = ((Pair<String, Boolean>) context.getType(varName)).getSecond() ;
+					boolean o = ((Triple<String, Boolean, Object>) context.getType(varName)).getSecond() ;
 					if(!o) {
 						throw new TypeException("Can't assign a value to an array");
 					}
 				} else if(valueType.equals(Constant.FUNCTION_CALL)) {
 					List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(Constant.VALUE)).get(0).get(Constant.FUNCTION);
 					String funcName = (String) function.get(0).get(Constant.VARIABLE);
-					Map<String, Object> rValue = ((Pair<List<String>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+					Map<String, Object> rValue = ((Triple<List<String>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 					boolean funcArray = (boolean) rValue.get(Constant.IS_ARRAY);
 					if(!funcArray) {
 						throw new TypeException("Can't assign a value to an array");
@@ -649,14 +652,14 @@ public class Verifier {
 		} else {
 			if(valueType.equals(Constant.VARIABLE)) {
 				String varName = (String) variable.get(Constant.VALUE);
-				boolean o = ((Pair<String, Boolean>) context.getType(varName)).getSecond() ;
+				boolean o = ((Triple<String, Boolean, Object>) context.getType(varName)).getSecond() ;
 				if(o) {
 					throw new TypeException("Can't assign a value to an array");
 				}
 			} else if(valueType.equals(Constant.FUNCTION_CALL)) {
 				List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC)).get(0).get(Constant.FUNCTION);
 				String funcName = (String) function.get(0).get(Constant.VARIABLE);
-				Map<String, Object> rValue = ((Pair<List<String>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+				Map<String, Object> rValue = ((Triple<List<String>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 				boolean funcArray = (boolean) rValue.get(Constant.IS_ARRAY);
 				if(funcArray) {
 					throw new TypeException("Can't assign a value to an array");
@@ -682,7 +685,7 @@ public class Verifier {
 			if(!context.hasFunction(funcName)) {
 				throw new FunctionException("Function: " + funcName + " doesn't exist");
 			}
-			Map<String, Object> pair = ((Pair<List<String>, Map<String, Object>>)context.getFunction(funcName)).getSecond();
+			Map<String, Object> pair = ((Triple<List<String>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 			valueType = (String) pair.get(Constant.TYPE);
 			boolean funcArray = (boolean) pair.get(Constant.IS_ARRAY);
 			if(funcArray) {
@@ -702,11 +705,11 @@ public class Verifier {
 			List<Map<String, Object>> f = (List<Map<String, Object>>) value.get(Constant.VALUE_FUNC);
 			checkParams(context, f, null);
 			String funcName = (String) ((List<Map<String, Object>>)f.get(0).get(Constant.FUNCTION)).get(0).get(Constant.VARIABLE);
-			String rType = (String) ((Pair<List<Map<String, Object>>, Map<String, Object>>) context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+			String rType = (String) ((Triple<List<Map<String, Object>>, Map<String, Object>, Object>) context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 			valueType = rType;
 		} 
 		if(valueType.equals(Constant.VARIABLE)) {
-			Pair<List<Object>, Boolean> type =(Pair<List<Object>, Boolean>)context.getType((String)value.get(Constant.EXPRESSION_VALUE));
+			Triple<List<Object>, Boolean, Object> type =(Triple<List<Object>, Boolean, Object>)context.getType((String)value.get(Constant.EXPRESSION_VALUE));
 			if(type != null) {
 				valueType = (String) ((List<Object>) type.getFirst()).get(0);
 			} else {
@@ -715,7 +718,7 @@ public class Verifier {
 					throw new VariableException("Variable: " + v + " doesn't exist");
 				}
 				String varName = (String) value.get(Constant.VALUE);
-				type = (Pair<List<Object>, Boolean>)context.getType(varName);
+				type = (Triple<List<Object>, Boolean, Object>)context.getType(varName);
 				if(type == null) {
 					throw new VariableException("Variable: " + varName + " doesn't exist");
 				} else {
@@ -746,7 +749,7 @@ public class Verifier {
 				throw new TypeException("Expecting empty return and return type: " + valueType);
 			} else if(valueType.equals(Constant.VARIABLE)) {
 				String value = (String) map.get(Constant.VALUE);
-				Pair<List<Object>, Boolean> pair = (Pair<List<Object>, Boolean>)context.getType(value);
+				Triple<List<Object>, Boolean, Object> pair = (Triple<List<Object>, Boolean, Object>)context.getType(value);
 				if(pair == null) {
 					throw new VariableException("Variable: " + value + " doesn't exist");
 				}

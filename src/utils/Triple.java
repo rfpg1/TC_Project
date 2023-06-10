@@ -1,13 +1,15 @@
 package utils;
 
-public class Pair<F, S> {
+public class Triple<F, S, K> {
 
 	private F first;
 	private S second;
+	private K third;
 	
-	public Pair(F first, S second) {
+	public Triple(F first, S second, K third) {
 		this.first = first;
 		this.second = second;
+		this.third = third;
 	}
 
 	public F getFirst() {
@@ -24,6 +26,14 @@ public class Pair<F, S> {
 
 	public void setSecond(S second) {
 		this.second = second;
+	}
+	
+	public K getThird() {
+		return third;
+	}
+	
+	public void setThird(K third) {
+		this.third = third;
 	}
 
 	@Override

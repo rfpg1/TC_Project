@@ -1,7 +1,8 @@
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
-import utils.Pair;
+
+import utils.Triple;
 
 public class Compiler {
 
@@ -267,7 +268,7 @@ public class Compiler {
 		String funcName = (String) funcCall.get(Constant.VARIABLE);
 		List<Map<String, Object>> ps = (List<Map<String, Object>>) funcCall.get(Constant.PARAMETERS);
 		String params = getParamsFunctionCall(ps, index);
-		String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+		String rType = (String) ((Triple<List<?>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 		String size = getSize(rType);
 		if(funcName.equals(Constant.PRINT_F)) {
 			emitter.insert("call " + size + "(i8*, ...) @" + funcName + "(" + params + ")", index);
@@ -440,7 +441,7 @@ public class Compiler {
 		Map<String, Object> func = ((List<Map<String, Object>>)((List<Map<String, Object>>) child.get(Constant.VALUE_FUNC)).get(0)
 				.get(Constant.FUNCTION)).get(0);
 		String funcName = (String) func.get(Constant.VARIABLE);
-		String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+		String rType = (String) ((Triple<List<?>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 		String size = getSize(rType);
 		return size;
 	}
@@ -577,7 +578,7 @@ public class Compiler {
 						.get(Constant.FUNCTION)).get(0);
 				String funcName = (String) func.get(Constant.VARIABLE);
 				String params = getParamsFunctionCall((List<Map<String, Object>>) func.get(Constant.PARAMETERS), index);
-				String rType = (String) ((Pair<List<?>, Map<String, Object>>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
+				String rType = (String) ((Triple<List<?>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 				size = getSize(rType);
 				emitter.insert(v1 + " = call " + size + " @" + funcName + "(" + params + ")", index);
 				return v1;
@@ -664,7 +665,7 @@ public class Compiler {
 	private String getVariableValue(Map<String, Object> child) {
 		String value = (String) child.get(Constant.VALUE);
 		do {
-			Pair<List<String>, Boolean> pair = (Pair<List<String>, Boolean>) context.getType(value);
+			Triple<List<String>, Boolean, Object> pair = (Triple<List<String>, Boolean, Object>) context.getType(value);
 			if(value != null && pair != null) {
 				value = pair.getFirst().get(1);
 			}

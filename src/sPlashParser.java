@@ -251,11 +251,18 @@ public class sPlashParser {
 		map.put(Constant.RETURN_TYPE, rType);
 		Map<String, Object> rMap = new LinkedHashMap<>();
 		rType.add(rMap);
-		rMap.put(Constant.TYPE, p.getChild(0).getChild(2).getChild(0).getText());
-		if(p.getChild(0).getChild(2).getChildCount() > 1) {
+		if(p.getChild(0).getChild(2).getChildCount() > 3) {
+			rMap.put(Constant.IS_ARRAY, false);
+			rMap.put(Constant.IS_MATRIX, true);
+			rMap.put(Constant.TYPE, p.getChild(0).getChild(2).getChild(2).getText());
+		}else if(p.getChild(0).getChild(2).getChildCount() > 1) {
 			rMap.put(Constant.IS_ARRAY, true);
+			rMap.put(Constant.IS_MATRIX, false);
+			rMap.put(Constant.TYPE, p.getChild(0).getChild(2).getChild(1).getText());
 		} else {
 			rMap.put(Constant.IS_ARRAY, false);
+			rMap.put(Constant.IS_MATRIX, false);
+			rMap.put(Constant.TYPE, p.getChild(0).getChild(2).getChild(0).getText());
 		}
 		if(p.getChild(0).getChildCount() > 3) {
 			updateRefinement(p, map, 0);
@@ -271,11 +278,18 @@ public class sPlashParser {
 				Map<String, Object> param = new LinkedHashMap<>();
 				params.add(param);
 				param.put(Constant.NAME, child.getChild(i).getChild(0).getText());
-				param.put(Constant.TYPE, child.getChild(i).getChild(2).getChild(0).getText());
-				if(child.getChild(i).getChild(2).getChildCount() > 1) {
+				if(child.getChild(i).getChild(2).getChildCount() > 3) {
+					param .put(Constant.IS_ARRAY, false);
+					param.put(Constant.IS_MATRIX, true);
+					param.put(Constant.TYPE, child.getChild(i).getChild(2).getChild(2).getText());
+				} else if(child.getChild(i).getChild(2).getChildCount() > 1) {
 					param.put(Constant.IS_ARRAY, true);
+					param.put(Constant.IS_MATRIX, false);
+					param.put(Constant.TYPE, child.getChild(i).getChild(2).getChild(1).getText());
 				} else {
 					param.put(Constant.IS_ARRAY, false);
+					param.put(Constant.IS_MATRIX, false);
+					param.put(Constant.TYPE, child.getChild(i).getChild(2).getChild(0).getText());
 				}
 				if(child.getChild(i).getChildCount() > 3) {
 					updateRefinement(child, param, i);
@@ -427,11 +441,18 @@ public class sPlashParser {
 			map.put(Constant.VARIABLE, values);
 			Map<String, Object> variableValues = new LinkedHashMap<>();
 			if(p.getChild(0).getChildCount() > 1) {
-				variableType = p.getChild(0).getChild(2).getChild(0).getText();
-				if(p.getChild(0).getChild(2).getChildCount() > 1) {
+				if(p.getChild(0).getChild(2).getChildCount() > 3) {
+					variableValues.put(Constant.IS_ARRAY, false);
+					variableValues.put(Constant.IS_MATRIX, true);
+					variableType = p.getChild(0).getChild(2).getChild(2).getText();
+				}else if(p.getChild(0).getChild(2).getChildCount() > 1) {
 					variableValues.put(Constant.IS_ARRAY, true);
+					variableValues.put(Constant.IS_MATRIX, false);
+					variableType = p.getChild(0).getChild(2).getChild(1).getText();
 				} else {
 					variableValues.put(Constant.IS_ARRAY, false);
+					variableValues.put(Constant.IS_MATRIX, false);
+					variableType = p.getChild(0).getChild(2).getChild(0).getText();
 				}
 			} else {
 				variableType = null;

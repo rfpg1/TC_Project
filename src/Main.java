@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import exception.CompilerException;
 import exception.FunctionException;
-import utils.Pair;
+import utils.Triple;
 
 public class Main {
 
@@ -73,7 +73,7 @@ public class Main {
 							//TODO: Instead of checking name check also parameters
 							throw new FunctionException("Function with name: " + name + " already exists");
 						}
-						context.setFunction(name, new Pair<>(paramsType, returnType));
+						context.setFunction(name, new Triple<>(paramsType, returnType, null));
 						addFunctions(context, function);
 					}
 				} else {
@@ -95,7 +95,7 @@ public class Main {
 								//TODO: Instead of checking name check also parameters
 								throw new FunctionException("Function with name: " + name + " already exists");
 							}
-							context.setFunction(name, new Pair<>(paramsType, returnType));
+							context.setFunction(name, new Triple<>(paramsType, returnType, null));
 						}
 					}
 				}
@@ -110,7 +110,7 @@ public class Main {
 		returnType.put(Constant.IS_ARRAY, false);
 		List<Map<String, Object>> paramsType = new ArrayList<>();
 
-		context.setFunction("printf", new Pair<>(paramsType, returnType));
+		context.setFunction("printf", new Triple<>(paramsType, returnType, null));
 		context.insertFunction("printf");
 	}
 

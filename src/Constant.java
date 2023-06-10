@@ -49,6 +49,7 @@ public class Constant {
 	public static final String FALSE = "false";
 	public static final String VALUE_BOOLEAN = "ValueBoolean";
 	public static final String ARRAY_TYPE = "ArrayType";
+	public static final String IS_MATRIX = "isMatrix";
 
 	public static final int VARIABLE_TYPE = 36;
 	public static final int BOOLEAN_TYPE = 8;

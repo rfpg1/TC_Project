@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import exception.CompilerException;
-import utils.Pair;
+import utils.Triple;
 
 public class Context {
 
@@ -42,10 +42,10 @@ public class Context {
 		return null;
 	}
 	
-	public void setType(String name, Object o, boolean array, Object value, boolean isConstant) {
+	public void setType(String name, Object o, boolean array, boolean matrix, Object value, boolean isConstant) {
 		Map<String, Object> scope = stack.get(head);
 		List<Object> objs = new ArrayList<>(Arrays.asList(o, value, isConstant));
-		scope.put(name, new Pair<List<Object>, Boolean>(objs, array));
+		scope.put(name, new Triple<List<Object>, Boolean, Boolean>(objs, array, matrix));
 	}
 	
 	public Object getFunction(String functionName) {
@@ -112,7 +112,7 @@ public class Context {
 
 	@SuppressWarnings("unchecked")
 	public boolean isArray(String vName) {
-		Pair<String, Object> a = (Pair<String, Object>) this.getType(vName);
+		Triple<String, Object, Object> a = (Triple<String, Object, Object>) this.getType(vName);
 		return (Boolean)a.getSecond();
 	}
 
