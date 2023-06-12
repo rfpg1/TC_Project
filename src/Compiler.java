@@ -1,3 +1,4 @@
+
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
@@ -67,9 +68,13 @@ public class Compiler {
 			if(isArray) {
 				size += "*";
 			}
+//			boolean isMatrix = (boolean) param.get(Constant.IS_MATRIX);
+//			if(isMatrix) {
+//				size += "*";
+//			}
 			emitter.insert(pointerName + " = alloca " + size);
 			name = "%" + name;
-			emitter.insert("store " + size + "" + name + ", " + size + "* " + pointerName);			
+			emitter.insert("store " + size + " " + name + ", " + size + "* " + pointerName);			
 		}
 	}
 
@@ -77,7 +82,6 @@ public class Compiler {
 		switch(type) {
 		case Constant.INT:
 		case Constant.DOUBLE:
-		case Constant.FLOAT:
 			return "i32";
 		case Constant.STRING:
 			return "i8*";
@@ -358,7 +362,7 @@ public class Compiler {
 		String op = (String) state.get(Constant.OPERATOR);
 		if(type.equals(Constant.BOOLEAN)) {
 			tempVar = booleanTypeExpr(value, tempVar, index, state);
-		} else if(type.equals(Constant.INT) || type.equals(Constant.DOUBLE) || type.equals(Constant.FLOAT)) {
+		} else if(type.equals(Constant.INT) || type.equals(Constant.DOUBLE)) {
 			integerTypeExpr(value, tempVar, state, index);
 		} else if(type.equals(Constant.VARIABLE)) {
 			value = (String) state.get(Constant.BOOLEAN_VALUE);
@@ -612,8 +616,7 @@ public class Compiler {
 			Map<String, Object> param = params.get(i);
 			String valueType = (String) param.get(Constant.VALUE_TYPE);
 			if(valueType != null) {
-				if(valueType.equals(Constant.INT) || valueType.equals(Constant.DOUBLE) 
-						|| valueType.equals(Constant.FLOAT)) {
+				if(valueType.equals(Constant.INT) || valueType.equals(Constant.DOUBLE)) {
 					String value = (String) param.get(Constant.VALUE);
 					bob.append("i32 " + value);
 				} else if(valueType.equals(Constant.VARIABLE)) {
@@ -679,7 +682,7 @@ public class Compiler {
 		String v1 = "";
 		if(type.equals(Constant.INT)) {
 			v1 = (String) expr.get(Constant.EXPRESSION_VALUE);
-		} else if(type.equals(Constant.DOUBLE) || type.equals(Constant.FLOAT)) {
+		} else if(type.equals(Constant.DOUBLE)) {
 			String tempVar = "%temp_var" + emitter.getCountVars();
 			String value  = (String) expr.get(Constant.EXPRESSION_VALUE);
 			emitter.insert(tempVar + " = alloca double", index);

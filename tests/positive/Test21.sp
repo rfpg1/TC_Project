@@ -1,7 +1,7 @@
 (* Testing comments * )
 (* Coments work just fine *)
 
-main:Void(a:[Int]) {
+main:Void(a:[Int], b:Int where b != 1) {
 	printf("%d", 2*2.0);
 	a(2*2.0);
 	printf("a %i %s %i", 1, "a", 3);

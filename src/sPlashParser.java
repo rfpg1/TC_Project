@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -304,7 +305,7 @@ public class sPlashParser {
 		Map<String, Object> refinement = new LinkedHashMap<>();
 		refinements.add(refinement);
 		refinement.put(Constant.VARIABLE, child.getChild(index).getChild(3).getChild(1).getText());
-		refinement.put(Constant.OPERATOR, child.getChild(index).getChild(3).getChild(2).getChild(0).getText());
+		refinement.put(Constant.OPERATOR, child.getChild(index).getChild(3).getChild(2).getText());
 		insertTypeIntoMap(refinement, child.getChild(index).getChild(3).getChild(3));
 	}
 

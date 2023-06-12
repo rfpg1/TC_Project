@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -6,17 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
+import org.sosy_lab.common.configuration.InvalidConfigurationException;
+import org.sosy_lab.java_smt.api.SolverException;
+
 import exception.BooleanException;
 import exception.CompilerException;
 import exception.FunctionException;
 import exception.InvalidReturnException;
+import exception.RefinementException;
 import exception.TypeException;
 import exception.VariableException;
+import utils.SatSolver;
 import utils.Triple;
 
 public class Verifier {
 
+	private SatSolver solver;
+	
+	public Verifier() throws InvalidConfigurationException {
+		solver = new SatSolver();
+	}
+	
 	@SuppressWarnings("unchecked")
 	public void verify(Context context, List<Map<String, Object>> statements) throws CompilerException {
 		if(statements != null) { 
@@ -199,7 +212,7 @@ public class Verifier {
 			} else {
 				String vType = (String) ((List<Object>) pair.getFirst()).get(0);
 				String bType = Constant.getOperatorType(op);
-				if(vType.equals(Constant.DOUBLE) || vType.equals(Constant.INT) || vType.equals(Constant.FLOAT)) {
+				if(vType.equals(Constant.DOUBLE) || vType.equals(Constant.INT)) {
 					if(operator == null) {
 						if(op == null) {
 							throw new BooleanException("Condition isn't valid");
@@ -233,7 +246,7 @@ public class Verifier {
 					throw new TypeException("Type: " + vType + " isn't valid in boolean expressions");
 				}
 			}
-		} else if(valueType.equals(Constant.INT) || valueType.equals(Constant.DOUBLE) || valueType.equals(Constant.FLOAT)) {
+		} else if(valueType.equals(Constant.INT) || valueType.equals(Constant.DOUBLE)) {
 			if(op == null) {
 				if(operator == null) {
 					throw new BooleanException("Condition isn't valid");
@@ -318,7 +331,7 @@ public class Verifier {
 				throw new TypeException("Function: " + funcName + " returns an array and they aren't allowed in boolean expressions");
 			} else {
 				String funcType = (String) returnStatement.get(Constant.TYPE);
-				if(funcType.equals(Constant.INT) || funcType.equals(Constant.DOUBLE) || funcType.equals(Constant.FLOAT)) {
+				if(funcType.equals(Constant.INT) || funcType.equals(Constant.DOUBLE)) {
 					if(op == null) {
 						if(operator == null) {
 							throw new BooleanException("Condition isn't valid");
@@ -393,7 +406,7 @@ public class Verifier {
 					throw new VariableException("Variable: " + s + " doesn't exist");
 				}
 				String type = (String) pair.getFirst();
-				if(!type.equals(Constant.INT) && !type.equals(Constant.DOUBLE) && !type.equals(Constant.FLOAT)) {
+				if(!type.equals(Constant.INT) && !type.equals(Constant.DOUBLE)) {
 					throw new TypeException("Variable: " + s + " has type: " + type + " and expected is int, double or float");
 				}
 			}
@@ -414,7 +427,7 @@ public class Verifier {
 			if(context.hasVarInPreviousScopes(name)) {
 				throw new VariableException("Variable: " + name + " already exists in outer functions");
 			}
-
+			checkRefinement(param, context);
 			if(context.getCurrentFunction() == null)
 				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, true);
 			else
@@ -422,6 +435,39 @@ public class Verifier {
 
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
+	}
+
+	@SuppressWarnings("unchecked")
+	private void checkRefinement(Map<String, Object> param, Context context) throws CompilerException {
+		String paramName = (String) param.get(Constant.NAME);
+		String paramType = (String) param.get(Constant.TYPE);
+		List<Map<String, Object>> refinement = (List<Map<String, Object>>) param.get(Constant.REFINEMENT);
+		if(refinement != null) {
+			Map<String, Object> ref = refinement.get(0);
+			String refName = (String) ref.get(Constant.VARIABLE);
+			if(!paramName.equals(refName)) {
+				throw new RefinementException("Variable inside refinement: " + refName + " isn't the one expected: " + paramName);
+			}
+			String type = (String) ref.get(Constant.VALUE_TYPE);
+			checkType(paramType, type, ref, context);
+			checkIfIsSat(context, ref, type, refName);
+		}
+	}
+
+	private void checkIfIsSat(Context context, Map<String, Object> ref, String type, String refName) throws CompilerException {
+		String op = (String) ref.get(Constant.OPERATOR);
+		try {
+			if(type.equals(Constant.INT)) {
+				int value = Integer.parseInt((String) ref.get(Constant.VALUE));
+				solver.solve(refName, value, op);
+			} else if(type.equals(Constant.DOUBLE)) {
+				double value = Double.parseDouble((String) ref.get(Constant.VALUE));
+				solver.solve(refName, value, op);
+			}
+		} catch(SolverException | InterruptedException e) {
+			//TODO Throw new SatSolverException();
+		}
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -470,10 +516,11 @@ public class Verifier {
 					String valueType = (String) variable.get(Constant.VALUE_TYPE);
 					checkType(type, valueType, variable, context);
 					checkArray(isArray, variable, context);
-					if(context.getCurrentFunction() == null)
+					if(context.getCurrentFunction() == null) {
 						context.setType(name, type, isArray, isMatrix, v, true);
-					else
+					} else {
 						context.setType(name, type, isArray, isMatrix, v, false);
+					}
 				}
 			}
 		}
@@ -483,11 +530,11 @@ public class Verifier {
 	private void checkParams(Context context, List<Map<String, Object>> list, String varName) throws CompilerException {
 		List<Map<String, Object>> function = (List<Map<String, Object>>) list.get(0).get(Constant.FUNCTION);
 		String funcName = (String) function.get(0).get(Constant.VARIABLE);
-		
+
 		if(!context.functionInScope(funcName)) {
 			throw new FunctionException("Function: " + funcName + " isn't defined in this scope");
 		}
-		
+
 		List<Map<String, Object>> params = (List<Map<String, Object>>) function.get(0).get(Constant.PARAMETERS);
 
 		if(funcName.equals(Constant.PRINT_F)) {
@@ -611,8 +658,6 @@ public class Verifier {
 			return Constant.INT;
 		case "%d":
 			return Constant.DOUBLE;
-		case "%f":
-			return Constant.FLOAT;
 		}
 		return null;
 	}
@@ -676,7 +721,7 @@ public class Verifier {
 		if(valueType == null) {
 			valueType = (String) value.get(Constant.VALUE_TYPE);
 		} else {
-			if(!valueType.equals(Constant.DOUBLE) && !valueType.equals(Constant.FLOAT)) {
+			if(!valueType.equals(Constant.DOUBLE)) {
 				valueType = (String) value.get(Constant.VALUE_TYPE);
 			}
 		}
@@ -761,19 +806,19 @@ public class Verifier {
 					if(type.equals(Constant.STRING) || type.equals(Constant.INT)) {
 						throw new TypeException("Excepting type: " + type + " and got: " + varType);
 					} else if(type.equals(Constant.DOUBLE)) {
-						if(!varType.equals(Constant.INT) && !varType.equals(Constant.FLOAT)) {
+						if(!varType.equals(Constant.INT)) {
 							throw new TypeException("Excepting type: " + type + " and got: " + varType);
 						}
 					}
 				}
 			} else if(type.equals(Constant.STRING) || type.equals(Constant.BOOLEAN)) {
 				throw new TypeException("Excepting type: " + type + " and got: " + valueType);
-			} else if(type.equals(Constant.DOUBLE) || type.equals(Constant.FLOAT)) {
+			} else if(type.equals(Constant.DOUBLE)) {
 				if(valueType.equals(Constant.EXPR)) {
 					Map<String, Object> exprMap = ((List<Map<String, Object>>) map.get(Constant.VALUE)).get(0);
 					String exprType = getValueType(exprMap, valueType, context, false);
 					checkType(type, exprType, map, context);
-				} else if(!valueType.equals(Constant.INT) && !valueType.equals(Constant.FLOAT)) {
+				} else if(!valueType.equals(Constant.INT)) {
 					throw new TypeException("Excepting type: " + type + " and got: " + valueType);
 				}
 			} else if(type.equals(Constant.INT)) {

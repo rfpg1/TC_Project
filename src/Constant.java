@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +34,6 @@ public class Constant {
 	public static final String DOUBLE = "Double";
 	public static final String STRING = "String";
 	public static final String BOOLEAN = "Boolean";
-	public static final String FLOAT = "Float";
 	public static final String VOID = "Void";
 	public static final String VALUE_TYPE = "valueType";
 	public static final String IS_ARRAY = "isArray";
@@ -51,10 +51,10 @@ public class Constant {
 	public static final String ARRAY_TYPE = "ArrayType";
 	public static final String IS_MATRIX = "isMatrix";
 
-	public static final int VARIABLE_TYPE = 36;
-	public static final int BOOLEAN_TYPE = 8;
-	public static final int NUMBER_INT_TYPE = 28;
-	public static final int NUMBER_DOUBLE_TYPE = 29;
+	public static final int VARIABLE_TYPE = 35;
+	public static final int BOOLEAN_TYPE = 7;
+	public static final int NUMBER_INT_TYPE = 27;
+	public static final int NUMBER_DOUBLE_TYPE = 28;
 	public static final String[] MATH_OPERATOR = {"*", "+", "-", "/", "%", "<", ">", ">=", "<=", "=="};
 	public static final String[] BOOLEAN_OPERATOR = {"&&", "||"};
 	
