@@ -419,6 +419,7 @@ public class Verifier {
 		context.setCurrentFunction((String)func.get(Constant.NAME));
 		for(Map<String, Object> param : (List<Map<String, Object>>) func.get(Constant.PARAMETERS)) {
 			String name = (String)param.get(Constant.NAME);
+			String type = (String) param.get(Constant.TYPE);
 			boolean isArray = (boolean) param.get(Constant.IS_ARRAY);
 			boolean isMatrix = (boolean) param.get(Constant.IS_MATRIX);
 			if(context.hasVarInCurrentScope(name)) {
@@ -427,7 +428,12 @@ public class Verifier {
 			if(context.hasVarInPreviousScopes(name)) {
 				throw new VariableException("Variable: " + name + " already exists in outer functions");
 			}
-			checkRefinement(param, context);
+			checkRefinement(name, type, param, context);
+			try {
+				solver.solve();
+			} catch(CompilerException | SolverException | InterruptedException e) {
+				throw new RefinementException(e.getMessage());
+			}
 			if(context.getCurrentFunction() == null)
 				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, true);
 			else
@@ -438,9 +444,7 @@ public class Verifier {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void checkRefinement(Map<String, Object> param, Context context) throws CompilerException {
-		String paramName = (String) param.get(Constant.NAME);
-		String paramType = (String) param.get(Constant.TYPE);
+	private void checkRefinement(String paramName, String paramType, Map<String, Object> param, Context context) throws CompilerException {
 		List<Map<String, Object>> refinement = (List<Map<String, Object>>) param.get(Constant.REFINEMENT);
 		if(refinement != null) {
 			Map<String, Object> ref = refinement.get(0);
@@ -451,6 +455,12 @@ public class Verifier {
 			String type = (String) ref.get(Constant.VALUE_TYPE);
 			checkType(paramType, type, ref, context);
 			checkIfIsSat(context, ref, type, refName);
+			if(ref.get(Constant.REFINEMENT_VALUE) != null)  {
+				Map<String, Object> nRef = ((List<Map<String, Object>>) ref.get(Constant.REFINEMENT_VALUE)).get(0);
+				String op = (String) nRef.get(Constant.OPERATOR);
+				solver.addOperator(op);
+				checkRefinement(paramName, paramType, nRef, context);
+			}
 		}
 	}
 
@@ -459,15 +469,14 @@ public class Verifier {
 		try {
 			if(type.equals(Constant.INT)) {
 				int value = Integer.parseInt((String) ref.get(Constant.VALUE));
-				solver.solve(refName, value, op);
+				solver.add(refName, value, op);
 			} else if(type.equals(Constant.DOUBLE)) {
 				double value = Double.parseDouble((String) ref.get(Constant.VALUE));
-				solver.solve(refName, value, op);
+				solver.add(refName, value, op);
 			}
 		} catch(SolverException | InterruptedException e) {
-			//TODO Throw new SatSolverException();
-		}
-		
+			throw new RefinementException(e.getMessage());
+		}		
 	}
 
 	@SuppressWarnings("unchecked")

@@ -1,5 +1,8 @@
 package utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.sosy_lab.common.ShutdownManager;
 import org.sosy_lab.common.configuration.Configuration;
 import org.sosy_lab.common.configuration.InvalidConfigurationException;
@@ -11,7 +14,6 @@ import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.BooleanFormulaManager;
 import org.sosy_lab.java_smt.api.Formula;
 import org.sosy_lab.java_smt.api.FormulaManager;
-import org.sosy_lab.java_smt.api.Model;
 import org.sosy_lab.java_smt.api.NumeralFormula.RationalFormula;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
 import org.sosy_lab.java_smt.api.RationalFormulaManager;
@@ -20,6 +22,7 @@ import org.sosy_lab.java_smt.api.SolverContext.ProverOptions;
 import org.sosy_lab.java_smt.api.SolverException;
 
 import exception.CompilerException;
+import exception.RefinementException;
 import exception.UnSatException;
 
 public class SatSolver {
@@ -28,6 +31,9 @@ public class SatSolver {
 	private FormulaManager fmgr;
 	private RationalFormulaManager imgr;
 	private BooleanFormulaManager bmgr;
+	private ProverEnvironment prover;
+	private List<BooleanFormula> constraints;
+	private List<String> operators;
 
 	public SatSolver() throws InvalidConfigurationException  {
 		Configuration config = Configuration.defaultConfiguration();
@@ -38,53 +44,83 @@ public class SatSolver {
 		fmgr = context.getFormulaManager();
 		imgr = fmgr.getRationalFormulaManager();
 		bmgr = fmgr.getBooleanFormulaManager();
-
+		prover  = context.newProverEnvironment(ProverOptions.GENERATE_MODELS);
+		constraints = new ArrayList<>();
+		operators = new ArrayList<>();
 	}
 
-	public void solve(String variable, Number n, String operator) throws InterruptedException, SolverException, CompilerException {
+	public void add(String variable, Number n, String operator) throws InterruptedException, SolverException, CompilerException {
 
 		checkOperator(variable, n, operator);
 	}
 
-	private <T extends Formula> void checkOperator(String variable, Number n, String operator) throws SolverException, InterruptedException, UnSatException {
-		try (ProverEnvironment prover = context.newProverEnvironment(ProverOptions.GENERATE_MODELS)) {
+	public void solve() throws SolverException, CompilerException, InterruptedException {
+		addConstrainst();
+		boolean isUnsat = prover.isUnsat();
+		if (isUnsat) {
+			throw new UnSatException("UnSat for constraint: " + constraints.get(0));
+		} else {			
+			constraints = new ArrayList<>();
+			operators = new ArrayList<>();
+		}
+	}
 
-			RationalFormula var = imgr.makeVariable(variable);
-
-			RationalFormula number = imgr.makeNumber(n.doubleValue());
-
-			BooleanFormula constraint;
-			switch (operator) {
-			case "==":
-				constraint = imgr.equal(var, number);
+	private void addConstrainst() throws RefinementException, InterruptedException {
+		for(String operator : operators) {
+			BooleanFormula b1 = constraints.get(0);
+			BooleanFormula b2 = constraints.get(1);
+			constraints.remove(0);
+			constraints.remove(0);
+			switch(operator) {
+			case "||":
+				BooleanFormula bOr = bmgr.or(b1, b2);
+				constraints.add(0, bOr);
 				break;
-			case "!=":
-				constraint = bmgr.or(imgr.greaterThan(var, number), imgr.lessThan(var, number));
-				break;
-			case "<":
-				constraint = imgr.lessThan(var, number);
-				break;
-			case "<=":
-				constraint = imgr.lessOrEquals(var, number);
-				break;
-			case ">":
-				constraint = imgr.greaterThan(var, number);
-				break;
-			case ">=":
-				constraint = imgr.greaterOrEquals(var, number);
+			case "&&":
+				BooleanFormula bAnd = bmgr.and(b1, b2);
+				constraints.add(0, bAnd);
 				break;
 			default:
-				throw new IllegalArgumentException("Unexpected value: " + operator);
-			}
-
-			prover.addConstraint(constraint);
-			boolean isUnsat = prover.isUnsat();
-			if (isUnsat) {
-				throw new UnSatException("");
-			} else {
-				Model model = prover.getModel();
-			    System.out.println(model.evaluate(var));
+				throw new RefinementException("Invalid Operator");
 			}
 		}
+		if(constraints.size() > 0)
+			prover.addConstraint(constraints.get(0));
+	}
+
+	private <T extends Formula> void checkOperator(String variable, Number n, String operator) throws SolverException, InterruptedException, UnSatException {
+		RationalFormula var = imgr.makeVariable(variable);
+
+		RationalFormula number = imgr.makeNumber(n.doubleValue());
+
+		BooleanFormula constraint;
+		switch (operator) {
+		case "==":
+			constraint = imgr.equal(var, number);
+			break;
+		case "!=":
+			constraint = bmgr.or(imgr.greaterThan(var, number), imgr.lessThan(var, number));
+			break;
+		case "<":
+			constraint = imgr.lessThan(var, number);
+			break;
+		case "<=":
+			constraint = imgr.lessOrEquals(var, number);
+			break;
+		case ">":
+			constraint = imgr.greaterThan(var, number);
+			break;
+		case ">=":
+			constraint = imgr.greaterOrEquals(var, number);
+			break;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + operator);
+		}
+
+		constraints.add(constraint);
+	}
+
+	public void addOperator(String operator) {
+		operators.add(operator);
 	}
 }

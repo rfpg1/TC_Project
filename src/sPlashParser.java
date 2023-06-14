@@ -266,7 +266,7 @@ public class sPlashParser {
 			rMap.put(Constant.TYPE, p.getChild(0).getChild(2).getChild(0).getText());
 		}
 		if(p.getChild(0).getChildCount() > 3) {
-			updateRefinement(p, map, 0);
+			updateRefinement(p, map, 0, 1);
 		}
 		updateArgs(p.getChild(2), map);
 	};
@@ -293,20 +293,28 @@ public class sPlashParser {
 					param.put(Constant.TYPE, child.getChild(i).getChild(2).getChild(0).getText());
 				}
 				if(child.getChild(i).getChildCount() > 3) {
-					updateRefinement(child, param, i);
+					updateRefinement(child, param, i, 1);
 				}
 			}		
 		}
 	}
 
-	private void updateRefinement(ParseTree child, Map<String, Object> map, int index) {
+	private void updateRefinement(ParseTree child, Map<String, Object> map, int index, int more) {
 		List<Map<String, Object>> refinements = new ArrayList<>();
 		map.put(Constant.REFINEMENT, refinements);
 		Map<String, Object> refinement = new LinkedHashMap<>();
 		refinements.add(refinement);
-		refinement.put(Constant.VARIABLE, child.getChild(index).getChild(3).getChild(1).getText());
-		refinement.put(Constant.OPERATOR, child.getChild(index).getChild(3).getChild(2).getText());
-		insertTypeIntoMap(refinement, child.getChild(index).getChild(3).getChild(3));
+		refinement.put(Constant.VARIABLE, child.getChild(index).getChild(3).getChild(more).getText());
+		refinement.put(Constant.OPERATOR, child.getChild(index).getChild(3).getChild(more + 1).getText());
+		insertTypeIntoMap(refinement, child.getChild(index).getChild(3).getChild(more + 2));
+		if(child.getChild(index).getChild(3).getChildCount() > more + 3) {
+			List<Map<String, Object>> refs = new ArrayList<>();
+			Map<String, Object> nRef = new LinkedHashMap<>();
+			refs.add(nRef);
+			refinement.put(Constant.REFINEMENT_VALUE, refs);
+			nRef.put(Constant.OPERATOR, child.getChild(index).getChild(3).getChild(more + 3).getText());
+			updateRefinement(child, nRef, index, more + 4);
+		}
 	}
 
 	private void insertTypeIntoMap(Map<String, Object> map, ParseTree child) {
