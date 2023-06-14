@@ -1,7 +1,8 @@
 (* Testing comments * )
 (* Coments work just fine *)
+d:Int = 4;
 
-main:Void(a:[Int], b:Int where b > 3 || b < 2) {
+main:Void(a:[Int], x:Int, b:Int where b == x && b == d) {
 	printf("%d", 2*2.0);
 	a(2*2.0);
 	printf("a %i %s %i", 1, "a", 3);

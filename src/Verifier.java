@@ -25,11 +25,11 @@ import utils.Triple;
 public class Verifier {
 
 	private SatSolver solver;
-	
+
 	public Verifier() throws InvalidConfigurationException {
 		solver = new SatSolver();
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public void verify(Context context, List<Map<String, Object>> statements) throws CompilerException {
 		if(statements != null) { 
@@ -428,16 +428,17 @@ public class Verifier {
 			if(context.hasVarInPreviousScopes(name)) {
 				throw new VariableException("Variable: " + name + " already exists in outer functions");
 			}
+			if(context.getCurrentFunction() == null)
+				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, true);
+			else
+				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, false);
+
 			checkRefinement(name, type, param, context);
 			try {
 				solver.solve();
 			} catch(CompilerException | SolverException | InterruptedException e) {
 				throw new RefinementException(e.getMessage());
 			}
-			if(context.getCurrentFunction() == null)
-				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, true);
-			else
-				context.setType(name, (String) param.get(Constant.TYPE), isArray, isMatrix, null, false);
 
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
@@ -454,6 +455,8 @@ public class Verifier {
 			}
 			String type = (String) ref.get(Constant.VALUE_TYPE);
 			checkType(paramType, type, ref, context);
+			boolean isArray = ((Triple<List<Object>, Boolean, Boolean>) context.getType(refName)).getThird();
+			checkArray(isArray, ref, context);
 			checkIfIsSat(context, ref, type, refName);
 			if(ref.get(Constant.REFINEMENT_VALUE) != null)  {
 				Map<String, Object> nRef = ((List<Map<String, Object>>) ref.get(Constant.REFINEMENT_VALUE)).get(0);
@@ -464,6 +467,7 @@ public class Verifier {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private void checkIfIsSat(Context context, Map<String, Object> ref, String type, String refName) throws CompilerException {
 		String op = (String) ref.get(Constant.OPERATOR);
 		try {
@@ -473,6 +477,37 @@ public class Verifier {
 			} else if(type.equals(Constant.DOUBLE)) {
 				double value = Double.parseDouble((String) ref.get(Constant.VALUE));
 				solver.add(refName, value, op);
+			} else if(type.equals(Constant.VARIABLE)) {
+				String var = (String) ref.get(Constant.VALUE);
+				List<Object> l = ((Triple<List<Object>, Boolean, Boolean>)context.getType(var)).getFirst();
+				String value = (String) l.get(1);
+				if(value == null) {
+					solver.addEveryPossibility(refName, var, op);
+				} else {
+					while(!value.startsWith("\"") && !value.matches("\\d+(.\\d+)?") && !value.matches("false") && !value.matches("true")) {
+						l = ((Triple<List<Object>, Boolean, Boolean>)context.getType(value)).getFirst();
+						value = (String) l.get(1);
+					}
+					if(value.startsWith("\"")) {
+						throw new RefinementException("Variable: " + var + " is a String and Strings can't be refined");
+					}
+					ref.put(Constant.VALUE, value);
+					if(value.matches("\\d+(.\\d+)?")) {
+						checkIfIsSat(context, ref, Constant.DOUBLE, refName);
+					} else if(value.matches("\\d+")) {
+						checkIfIsSat(context, ref, Constant.INT, refName);
+					} else {
+						checkIfIsSat(context, ref, Constant.BOOLEAN, refName);
+					}
+				}
+			} else if(type.equals(Constant.BOOLEAN)) {
+				if(!op.equals("==") && !op.equals("!=")) {
+					throw new RefinementException("Operator: " + op + " isn't valid for boolean types");
+				}
+				boolean value = Boolean.parseBoolean((String)ref.get(Constant.VALUE));
+				solver.addBoolean(refName, value, op);
+			} else {
+				throw new RefinementException("Not implemented for type: " + type);
 			}
 		} catch(SolverException | InterruptedException e) {
 			throw new RefinementException(e.getMessage());

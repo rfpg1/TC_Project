@@ -38,6 +38,6 @@ public class Triple<F, S, K> {
 
 	@Override
 	public String toString() {
-		return "Pair [first=" + first + ", second=" + second + "]";
+		return "Triple [first=" + first + ", second=" + second + ", third= " + third + "]";
 	}
 }

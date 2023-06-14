@@ -50,8 +50,11 @@ public class SatSolver {
 	}
 
 	public void add(String variable, Number n, String operator) throws InterruptedException, SolverException, CompilerException {
+		RationalFormula var = imgr.makeVariable(variable);
 
-		checkOperator(variable, n, operator);
+		RationalFormula number = imgr.makeNumber(n.doubleValue());
+		
+		checkOperator(operator, var, number);
 	}
 
 	public void solve() throws SolverException, CompilerException, InterruptedException {
@@ -88,11 +91,8 @@ public class SatSolver {
 			prover.addConstraint(constraints.get(0));
 	}
 
-	private <T extends Formula> void checkOperator(String variable, Number n, String operator) throws SolverException, InterruptedException, UnSatException {
-		RationalFormula var = imgr.makeVariable(variable);
-
-		RationalFormula number = imgr.makeNumber(n.doubleValue());
-
+	private <T extends Formula> void checkOperator(String operator, RationalFormula var, RationalFormula number) 
+			throws SolverException, InterruptedException, UnSatException {
 		BooleanFormula constraint;
 		switch (operator) {
 		case "==":
@@ -122,5 +122,31 @@ public class SatSolver {
 
 	public void addOperator(String operator) {
 		operators.add(operator);
+	}
+
+	public void addEveryPossibility(String refName, String var, String op) throws CompilerException, SolverException, InterruptedException {
+		RationalFormula r1 = imgr.makeVariable(var);
+		RationalFormula r2 = imgr.makeVariable(refName);
+		
+		checkOperator(op, r1, r2);
+	}
+
+	public void addBoolean(String refName, boolean value, String operator) {
+		BooleanFormula number = bmgr.makeBoolean(value);
+		BooleanFormula var = bmgr.makeVariable(refName);
+		
+		BooleanFormula constraint;
+		switch (operator) {
+		case "==":
+			constraint = bmgr.equivalence(var, number);
+			break;
+		case "!=":
+			constraint = bmgr.not(bmgr.equivalence(var, number));
+			break;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + operator);
+		}
+
+		constraints.add(constraint);
 	}
 }
