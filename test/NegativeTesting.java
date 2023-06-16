@@ -18,8 +18,9 @@ class NegativeTesting {
 	public static void setUp() {
 		File tests = new File("tests/negative");
 		for(File test : tests.listFiles()) {
-			System.out.println();
-			files.add(test.getName());
+			if(!test.getName().endsWith(".ll") ) {
+				files.add(test.getName());
+			}
 		}
 	}
 

@@ -11,6 +11,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
+import utils.Constant;
+
 public class sPlashParser {
 
 	@SuppressWarnings("unchecked")
@@ -156,7 +158,7 @@ public class sPlashParser {
 		String varName = child.getChild(0).getText();
 		array.put(Constant.VARIABLE, varName);			
 
-		if(child.getChild(0).getChildCount() > 5) {
+		if(child.getChildCount() > 5) {
 			insertTypeIntoMap(array, child.getChild(6));
 		} else {
 			insertTypeIntoMap(array, child.getChild(2));
@@ -367,8 +369,11 @@ public class sPlashParser {
 					map.put(Constant.VALUE_BOOLEAN, exprValues);
 					Map<String, Object> expr = new LinkedHashMap<>();
 					exprValues.add(expr);
-					expr.put(Constant.VALUE_BOOLEAN, new ArrayList<Map<String, Object>>());
-					toJson(child.getChild(2), expr);
+					List<Map<String, Object>> bExpr = new ArrayList<>();
+					Map<String, Object> bMap = new LinkedHashMap<>();
+					bExpr.add(bMap);
+					expr.put(Constant.VALUE_BOOLEAN, bExpr);
+					toJson(child.getChild(2), bMap);
 
 				}
 			}

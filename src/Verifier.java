@@ -19,6 +19,8 @@ import exception.InvalidReturnException;
 import exception.RefinementException;
 import exception.TypeException;
 import exception.VariableException;
+import utils.Constant;
+import utils.Context;
 import utils.SatSolver;
 import utils.Triple;
 
@@ -36,8 +38,11 @@ public class Verifier {
 			for(Map<String, Object> statement : statements) {
 				for(String key : statement.keySet()) {
 					if(key.equals(Constant.DECLARATION)) {
-						String name = (String) ((List<Map<String, Object>>) statement.get(Constant.DECLARATION)).get(0).get(Constant.NAME);
-						context.insertFunction(name);
+						List<Map<String, Object>> declarations = (List<Map<String, Object>>) statement.get(Constant.DECLARATION);
+						for(Map<String, Object> decl : declarations) {
+							String name = (String) decl.get(Constant.NAME);
+							context.insertFunction(name);
+						}
 					} else if(key.equals(Constant.VARIABLE)) {
 						checkVariable(statement, key, context);
 					} else if(key.equals(Constant.FUNCTION)) {
@@ -206,6 +211,7 @@ public class Verifier {
 				throw new VariableException("Variable: " + varName + " doesn't exist");
 			} else {
 				String vType = (String) ((List<Object>) pair.getFirst()).get(0);
+				ifStatement.put(Constant.VALUE_ACTUAL_TYPE, vType);
 				String bType = Constant.getOperatorType(op);
 				if(vType.equals(Constant.DOUBLE) || vType.equals(Constant.INT)) {
 					if(operator == null) {
@@ -379,10 +385,10 @@ public class Verifier {
 				}
 			}
 		}
-		if(ifStatement.get(Constant.VALUE) instanceof ArrayList && op != null) {
-			Map<String, Object> v = ((List<Map<String, Object>>) ifStatement.get(Constant.VALUE)).get(0);
-			List<Map<String, Object>> l = (List<Map<String, Object>>) v.get(Constant.VALUE);
-			if(l != null) {
+		if(ifStatement.get(Constant.VALUE_BOOLEAN) instanceof ArrayList && op != null) {
+			Map<String, Object> v = ((List<Map<String, Object>>) ifStatement.get(Constant.VALUE_BOOLEAN)).get(0);
+			List<Map<String, Object>> l = (List<Map<String, Object>>) v.get(Constant.VALUE_BOOLEAN);
+			if(l != null && l.size() > 0) {
 				Map<String, Object> value = l.get(0);
 				checkBooleanExpression(value, context, operator);
 			}
@@ -893,7 +899,9 @@ public class Verifier {
 					valueType = (String) ((List<Object>) type.getFirst()).get(0);
 				}
 			}
-		} else if(value.get(Constant.EXPRESSION_VALUE) != null &&  value.get(Constant.VALUE) != null) {
+		} 
+		
+		if(value.get(Constant.EXPRESSION_VALUE) != null &&  value.get(Constant.VALUE) != null) {
 			Map<String, Object> values = ((List<Map<String, Object>>)((List<Map<String, Object>>)value.get(Constant.VALUE)).get(0).get(Constant.VALUE)).get(0);
 			valueType = getValueType(values, valueType, context, isArray);
 		}

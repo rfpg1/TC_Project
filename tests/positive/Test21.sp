@@ -3,8 +3,7 @@
 d:Int = 4;
 x:Int = d;
 
-main:Void(a:[Int], b:Int where b == x && b == d) {
-	czs:Int = array[0];
+main:Void(a:Int, b:[String]) {
 	printf("%d", 2*2.0);
 	a(2*2.0);
 	printf("a %i %s %i", 1, "a", 3);

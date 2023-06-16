@@ -3,6 +3,10 @@ import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
 
+import utils.BooleanExpressionUtils;
+import utils.Constant;
+import utils.Context;
+import utils.Emitter;
 import utils.Triple;
 
 public class Compiler {
@@ -304,7 +308,10 @@ public class Compiler {
 		String endLabel = "%end_label" + emitter.getCountVars();
 		String ifLabel = "%if_label" + emitter.getCountVars();
 		String elseLabel = "%else_label" + emitter.getCountVars();
-		String var = getBooleanExpr(state, index, null, 0);
+		BooleanExpressionUtils booleanExpr = new BooleanExpressionUtils(emitter);
+		getBooleanExpr(state, index, null, booleanExpr);
+
+		String var = booleanExpr.solveExpr(index);
 		if(hasIfStatements(state)) {
 			if(hasElseStatement(state)) {
 				emitter.insert("br i1 " + var + ", label " + ifLabel + ", label " + elseLabel, index);
@@ -369,59 +376,105 @@ public class Compiler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private String getBooleanExpr(Map<String, Object> state, int index, String exprVar, int flag) {
+	private void getBooleanExpr(Map<String, Object> state, int index, String exprVar, BooleanExpressionUtils bExpr) {
 		String type = (String) state.get(Constant.VALUE_TYPE);
-		String value = "";
-		String tempVar = "%temp_var" + emitter.getCountVars();
 		String op = (String) state.get(Constant.OPERATOR);
+		String opType = Constant.getOperatorType(op);
+		String tempVar = "%temp_var" + emitter.getCountVars();
+
 		if(type.equals(Constant.BOOLEAN)) {
-			tempVar = booleanTypeExpr(value, tempVar, index, state);
-		} else if(type.equals(Constant.INT) || type.equals(Constant.DOUBLE)) {
-			integerTypeExpr(value, tempVar, state, index);
+			String value = (String) state.get(Constant.VALUE);
+
+			value = getBooleanValue(value);
+			emitter.insert(tempVar + " = icmp eq i32 " + value + ", 1", index);
+			bExpr.addConstrainst(tempVar, opType);
 		} else if(type.equals(Constant.VARIABLE)) {
-			value = (String) state.get(Constant.BOOLEAN_VALUE);
+			String value = (String) state.get(Constant.VALUE);
+
 			if(context.hasVar(value)) {
 				value = emitter.getConst(value);
 			} else {
 				value = emitter.getPointerName(value);
 			}
-			emitter.insert(tempVar + " = load i32, i32* " + value, index);
+			String actualType = (String) state.get(Constant.VALUE_ACTUAL_TYPE);
+			String size = getSize(actualType);
+			emitter.insert(tempVar + " = load " + size + ", " + size + "* " + value, index);
+			bExpr.addConstrainst(tempVar, opType);
 		} else if(type.equals(Constant.FUNCTION_CALL)) {
 			tempVar = getValue(state, null, null, index);
-			String size = getFunctionSize(state);
-			if(size.equals("i1")) {
-				String temp3 = "%temp_var" + emitter.getCountVars();
-				emitter.insert(temp3 + " = zext i1 " + tempVar + " to i32", index);
-				tempVar = temp3;
-			}
+			bExpr.addConstrainst(tempVar, opType);
 		} else if(type.equals(Constant.EXPR)) {
-			tempVar  = getValue(state, null, null, index);
+			Map<String, Object> expr = ((List<Map<String, Object>>) state.get(Constant.VALUE)).get(0);
+			tempVar = getExprValue(expr, tempVar, null, null, index);
+			bExpr.addConstrainst(tempVar, opType);
 
+		} else if(type.equals(Constant.INT)) {
+			String value = (String) state.get(Constant.VALUE);
+
+			value = (String) state.get(Constant.BOOLEAN_VALUE);
+			emitter.insert(tempVar + " = add i32 0, " + value, index);
+			bExpr.addConstrainst(tempVar, opType);
 		}
 		if(op != null) {
-			Map<String, Object> nMap = ((List<Map<String, Object>>) state.get(Constant.VALUE_BOOLEAN)).get(0);
-			String opType = Constant.getOperatorType(op);
-			String v2;
-			if(opType.equals(Constant.MATH)) {
-				v2 = getValue(nMap, null, null, 0);
-			} else {
-				v2 = getBooleanExpr(nMap, index, exprVar, 1);
-			}
-			String fTemp = "%result_boolean" + emitter.getCountVars();
-			switchCase(fTemp, tempVar, v2, index, op);
-			List<Map<String, Object>> nnMap = (List<Map<String, Object>>) nMap.get(Constant.VALUE_BOOLEAN);
-			if(nnMap != null && nnMap.size() > 0 && flag == 1) {
-				Map<String, Object> b = nnMap.get(0);
-				String s = getBooleanExpr(b, index, exprVar, 1);
-				op = (String) nMap.get(Constant.OPERATOR);
-				String nTemp = "%temp_var" + emitter.getCountVars();
-				switchCase(nTemp, fTemp, s, index, op);
-				fTemp = nTemp;
-			}
-			return fTemp;
-		} else {
-			return tempVar;
+			bExpr.addOperator(op);
+			Map<String, Object> nextExpr = ((List<Map<String, Object>>) state.get(Constant.VALUE_BOOLEAN)).get(0);
+			nextExpr =  ((List<Map<String, Object>>) nextExpr.get(Constant.VALUE_BOOLEAN)).get(0);
+			getBooleanExpr(nextExpr, index, exprVar, bExpr);
 		}
+		//		String type = (String) state.get(Constant.VALUE_TYPE);
+		//		String value = "";
+		//		String tempVar = "%temp_var" + emitter.getCountVars();
+		//		String op = (String) state.get(Constant.OPERATOR);
+		//		if(type.equals(Constant.BOOLEAN)) {
+		//			tempVar = booleanTypeExpr(value, tempVar, index, state);
+		//		} else if(type.equals(Constant.INT) || type.equals(Constant.DOUBLE)) {
+		//			integerTypeExpr(value, tempVar, state, index);
+		//		} else if(type.equals(Constant.VARIABLE)) {
+		//			value = (String) state.get(Constant.BOOLEAN_VALUE);
+		//			if(context.hasVar(value)) {
+		//				value = emitter.getConst(value);
+		//			} else {
+		//				value = emitter.getPointerName(value);
+		//			}
+		//			emitter.insert(tempVar + " = load i32, i32* " + value, index);
+		//		} else if(type.equals(Constant.FUNCTION_CALL)) {
+		//			tempVar = getValue(state, null, null, index);
+		//			String size = getFunctionSize(state);
+		//			if(size.equals("i1")) {
+		//				String temp3 = "%temp_var" + emitter.getCountVars();
+		//				emitter.insert(temp3 + " = zext i1 " + tempVar + " to i32", index);
+		//				tempVar = temp3;
+		//			}
+		//		} else if(type.equals(Constant.EXPR)) {
+		//			tempVar  = getValue(state, null, null, index);
+		//
+		//		}
+		//		if(op != null) {
+		//			Map<String, Object> nMap = ((List<Map<String, Object>>) state.get(Constant.VALUE_BOOLEAN)).get(0);
+		//			nMap = ((List<Map<String, Object>>) nMap.get(Constant.VALUE_BOOLEAN)).get(0);
+		//			String opType = Constant.getOperatorType(op);
+		//			String v2;
+		//			if(opType.equals(Constant.MATH)) {
+		//				v2 = getValue(nMap, null, null, 0);
+		//			} else {
+		//				v2 = getBooleanExpr(nMap, index, exprVar, 1);
+		//			}
+		//			String fTemp = "%result_boolean" + emitter.getCountVars();
+		//			switchCase(fTemp, tempVar, v2, index, op);
+		//			List<Map<String, Object>> nnMap = (List<Map<String, Object>>) nMap.get(Constant.VALUE_BOOLEAN);
+		//			if(nnMap != null && nnMap.size() > 0 && flag == 1) {
+		//				nnMap = (List<Map<String, Object>>) nnMap.get(0).get(Constant.VALUE_BOOLEAN);
+		//				Map<String, Object> b = nnMap.get(0);
+		//				String s = getBooleanExpr(b, index, exprVar, 1);
+		//				op = (String) nMap.get(Constant.OPERATOR);
+		//				String nTemp = "%temp_var" + emitter.getCountVars();
+		//				switchCase(nTemp, fTemp, s, index, op);
+		//				fTemp = nTemp;
+		//			}
+		//			return fTemp;
+		//		} else {
+		//			return tempVar;
+		//		}
 	}
 
 	private void switchCase(String fTemp, String tempVar, String v2, int index, String op) {
@@ -431,7 +484,6 @@ public class Compiler {
 			break;
 		case "&&":
 			emitter.insert(fTemp + " = and i32 " + tempVar + ", " + v2, index);
-
 			break;
 		case ">":
 			emitter.insert(fTemp + " = icmp sgt i32 " + tempVar + ", " + v2, index);
@@ -558,9 +610,9 @@ public class Compiler {
 		} else {
 			name = emitter.getPointerName(name);
 		}
-		
+
 		String strName = "";
-		
+
 		if(type.equals(Constant.STRING)) {
 			value = getValue(statement, type, size, index);
 			strName = "@.str." + emitter.getStringCount();
@@ -570,7 +622,7 @@ public class Compiler {
 		} else {
 			value = getValue(statement, type, size, index);
 		}
-		
+
 		boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
 		if(isArray) {
 			size += "*";
@@ -582,7 +634,7 @@ public class Compiler {
 		pos = ((List<Map<String, Object>>)pos.get(Constant.VALUE)).get(0);
 		String position = getPosition(pos, 0);
 		emitter.insert(tempVar2 + " = getelementptr inbounds " + size.substring(0, size.length() - 1) 
-					+ ", " + size + " " + tempVar + ", i64 " + position, index);
+		+ ", " + size + " " + tempVar + ", i64 " + position, index);
 		storeNewValue(size, value, type, tempVar2, index, strName);
 	}
 
@@ -591,7 +643,7 @@ public class Compiler {
 		case Constant.STRING:
 			emitter.insert("store " + size.substring(0, size.length()-1) + " getelementptr inbounds"
 					+ "([" + (value.length() + 1) + " x i8], [" + (value.length() + 1) + " x i8]*"
-							+ " " + strName + ", i64 0, i64 0), " + size + " " + tempVar2, index);
+					+ " " + strName + ", i64 0, i64 0), " + size + " " + tempVar2, index);
 			break;
 		case Constant.INT:
 		case Constant.DOUBLE:
@@ -667,8 +719,8 @@ public class Compiler {
 				String params = getParamsFunctionCall((List<Map<String, Object>>) func.get(Constant.PARAMETERS), index);
 				String rType = (String) ((Triple<List<?>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 				size = getSize(rType);
-				boolean isArray = (boolean) child.get(Constant.IS_ARRAY);
-				boolean isMatrix = (boolean) child.get(Constant.IS_MATRIX);
+				boolean isArray = child.get(Constant.IS_ARRAY) != null ? (boolean) child.get(Constant.IS_ARRAY) : false;
+				boolean isMatrix = child.get(Constant.IS_MATRIX) != null ? (boolean) child.get(Constant.IS_MATRIX) : false;
 				if(isArray) {
 					size += "*";
 				}

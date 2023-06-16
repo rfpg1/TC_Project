@@ -1,6 +1,10 @@
 (* Testing arrays *)
-max:Int(a:Int[]){
+max:Int(a:[Int]){
 	i:Int = 2;
-	a.get_array()[i + 3 + c];
+	f:Int = a.get_array()[i + 3 + d()];
 	return 2;
+}
+
+d:Double() {
+	return 2.0;
 }

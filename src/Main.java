@@ -14,6 +14,9 @@ import org.sosy_lab.common.configuration.InvalidConfigurationException;
 
 import exception.CompilerException;
 import exception.FunctionException;
+import utils.Constant;
+import utils.Context;
+import utils.Emitter;
 import utils.Triple;
 
 public class Main {
@@ -41,7 +44,7 @@ public class Main {
 					addFunctions(c, tree);
 					Verifier v = new Verifier();
 					v.verify(c, (List<Map<String, Object>>) tree.get(Constant.STATEMENT));
-					Emitter e = new Emitter();
+					Emitter e = new Emitter(args[i]);
 					Compiler com = new Compiler(e, c, (List<Map<String, Object>>) tree.get(Constant.STATEMENT));
 					com.compileToLLVM();
 				} catch(IOException e) {

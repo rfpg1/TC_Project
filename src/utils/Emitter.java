@@ -1,3 +1,4 @@
+package utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,14 +15,16 @@ public class Emitter {
 	private int stringCount;
 	private List<String> vars;
 	private int countVars;
+	private String fileName;
  
-	public Emitter() {
+	public Emitter(String fileName) {
 		this.count = 0;
 		this.functionCount = 0 ;
 		this.lines = new ArrayList<>();
 		this.stringCount = 0;
 		this.vars = new ArrayList<>();
 		this.countVars = 0;
+		this.fileName = fileName.substring(0, fileName.length() - 3);
 	}	
 	
 	public int getCountVars() {
@@ -94,7 +97,7 @@ public class Emitter {
 			}
 		}
 		
-		PrintWriter pw = new PrintWriter(new File("Main.ll"));
+		PrintWriter pw = new PrintWriter(new File(fileName + ".ll"));
 		pw.append(bob.toString());
 		pw.close();
 	}

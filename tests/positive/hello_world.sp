@@ -8,14 +8,15 @@ s:String = d;
 f:Boolean = true;
 b:Double = 3;
 z:Int = 2;
-main:Int where main > 2*4 (a:Int[], b:Double){
+main:Int where main > 2*4 (a:Int, b:[String]){
 (* dwada *)
+	pi3:Int = z*4*min(z);
 	sample_normal   :  Double   (mean:Double,  stddev : Double   where   stddev != a);
 	abs:Int where abs > 0 (val:Int)  ;
 	abs(2);
 	pi:Boolean = false;
 	pi1:String = "true\t";
-	pi3:Double = z*4*min(z);
+	
 	pi2:Int = 3;
 	pi4:Int = 2;
 	pi = true;
@@ -45,6 +46,10 @@ min:Int(i:Int) {
 	return i;
 }
 
+mini2:Double(i:Int){
+	return i;
+}
+
 maxi:Int(a:Int, b:Int) {
 	z:Int = min(a);
 	return z;
@@ -55,6 +60,6 @@ toString:String() {
 }
 
 b:Boolean(){
-return false;
+	return false;
 }
 

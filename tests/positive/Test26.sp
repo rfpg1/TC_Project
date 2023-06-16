@@ -1,10 +1,15 @@
 (* Testing if *)
-main:Int() {
-	if true    && false || 3 > 4 {
+main:Int(a:Int, b:[String]) {
+	cd:Boolean = true;
+	if cd    && test()|| true {
 				(* TESTE *)
-				if 2 > 2 {
+				if true && 2*2+45.0 > 2 {
 						_ola:Int = 3; 
 					}
 	}
 return 0; 
+}
+
+test:Boolean() {
+	return true;
 }
