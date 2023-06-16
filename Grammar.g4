@@ -46,7 +46,7 @@ vname_type:
 ;
 
 type:
-	(DOUBLE|INT|BOOLEAN|STRING|VOID|LEFT_R INT RIGHT_R|(LEFT_R DOUBLE RIGHT_R| (LEFT_R LEFT_R INT RIGHT_R RIGHT_R)))?
+	(DOUBLE|INT|BOOLEAN|STRING|VOID|LEFT_R INT RIGHT_R|LEFT_R DOUBLE RIGHT_R| LEFT_R STRING RIGHT_R |LEFT_R LEFT_R INT RIGHT_R RIGHT_R)?
 ;
 
 refinement:
@@ -66,7 +66,7 @@ statement:
 ;
 
 value:
-	vname_type_optional EQUALS (function_call|number|string_lit|VARIABLE|expr|TRUE|FALSE) SEMICOLON
+	vname_type_optional EQUALS (function_call|number|string_lit|VARIABLE|expr|TRUE|FALSE|array_def) SEMICOLON
 ;
 
 boolean_expression:
@@ -95,13 +95,17 @@ expr_value:
 ;
 
 vname_type_optional:
-	(VARIABLE) (DOUBLE_POINTS type)? /* Nomes das funções não podem começar com números */
+	(VARIABLE) (LEFT_R position RIGHT_R|DOUBLE_POINTS type)? /* Nomes das funções não podem começar com números */
 ;
 
-arrays
- : VARIABLE LEFT_R position RIGHT_R SEMICOLON
- | VARIABLE '.' GET_ARRAY LEFT_PAR RIGHT_PAR LEFT_R position RIGHT_R SEMICOLON
+arrays:
+	array_def SEMICOLON
  ;
+
+array_def:
+	VARIABLE LEFT_R position RIGHT_R
+ 	| VARIABLE '.' GET_ARRAY LEFT_PAR RIGHT_PAR LEFT_R position RIGHT_R
+;
 
 position:
 	pos
@@ -156,7 +160,7 @@ args_def:
 ;
 
 args_value:
-	(function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr) (COMMA (function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr))*
+	(array_def|function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr) (COMMA (array_def|function_call|number|string_lit|TRUE|FALSE|VARIABLE|expr))*
 ;
 
 operator:

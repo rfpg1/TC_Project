@@ -22,7 +22,7 @@ public class sPlashParser {
 			String parent = getClassName(p.getParent());
 			if(parent.equals(Constant.PROG) || parent.equals(Constant.DEFINITION)) {
 				if(map.get(Constant.STATEMENT) != null) {
-					if(!name.equals(Constant.STATEMENT)) {
+					if(!name.equals(Constant.STATEMENT) && !name.equals(Constant.DECLARATION)) {
 						List<Map<String, Object>> statements = (List<Map<String, Object>>) map.get(Constant.STATEMENT);
 						Optional<Integer> index = getIndexKey(statements, Constant.FUNCTION);
 						if(index.isEmpty()) {
@@ -140,8 +140,6 @@ public class sPlashParser {
 					if(getClassName(p.getChild(i).getChild(0)).equals(Constant.FUNCTION_CALL)) {
 						functionCall(p.getChild(i).getChild(0), map);
 					}
-				} else if(childName.equals(Constant.ARRAYS)) {
-					updateArrays(p.getChild(i), map);
 				}
 			}
 		}
@@ -149,29 +147,16 @@ public class sPlashParser {
 		return map;
 	}
 
-	@SuppressWarnings("unchecked")
-	private void updateArrays(ParseTree child, Map<String, Object> map) {
-		List<Map<String, Object>> statements = (List<Map<String, Object>>) map.get(Constant.STATEMENT);
-		Optional<Integer> index = getIndexKey(statements, Constant.ARRAYS);
-		Map<String, Object> array;
-		if(index.isPresent()) {
-			List<Map<String, Object>> arrays = (List<Map<String, Object>>) statements.get(index.get()).get(Constant.ARRAYS);
-			array = new LinkedHashMap<>();
-			array.put(Constant.VARIABLE, child.getChild(0).getText());
-			arrays.add(array);
-		} else {
-			Map<String, Object> arrays = new LinkedHashMap<>();
-			statements.add(arrays);
-			List<Map<String, Object>> arraysList = new ArrayList<>();
-			arrays.put(Constant.ARRAYS, arraysList);
-			array = new LinkedHashMap<>();
-			arraysList.add(array);
-			String varName = child.getChild(0).getText();
-			array.put(Constant.VARIABLE, varName);
-			
-		}
+	private void updateArrays(ParseTree child, Map<String, Object> map) {		
+		List<Map<String, Object>> arraysList = new ArrayList<>();
+		map.put(Constant.VALUE, arraysList);
+		map.put(Constant.VALUE_TYPE, Constant.ARRAYS);
+		Map<String, Object> array = new LinkedHashMap<>();
+		arraysList.add(array);
+		String varName = child.getChild(0).getText();
+		array.put(Constant.VARIABLE, varName);			
 
-		if(child.getChildCount() > 5) {
+		if(child.getChild(0).getChildCount() > 5) {
 			insertTypeIntoMap(array, child.getChild(6));
 		} else {
 			insertTypeIntoMap(array, child.getChild(2));
@@ -212,6 +197,7 @@ public class sPlashParser {
 				paramFunctionCall(param, child.getChild(i));
 			} else {
 				insertTypeIntoMap(param, child.getChild(i));
+				
 				if(param.isEmpty()) {
 					params.remove(param);
 				}
@@ -387,7 +373,7 @@ public class sPlashParser {
 				}
 			}
 		} else if(name.equals(Constant.POSITION)) {
-			map.put(Constant.VALUE_TYPE, Constant.POSITION);
+			map.put(Constant.VALUE_TYPE, Constant.INT);
 			List<Map<String, Object>> exprValues = new ArrayList<>();
 			map.put(Constant.VALUE, exprValues);
 			Map<String, Object> expr = new LinkedHashMap<>();
@@ -411,7 +397,7 @@ public class sPlashParser {
 				funcList.add(funcMap);
 				exprF.put(Constant.FUNCTION, funcList);
 				funcMap.put(Constant.VARIABLE, child.getChild(0).getChild(0).getChild(0).getText());
-				
+
 				updateArgsValue(child.getChild(0).getChild(0).getChild(2), funcMap);
 			}
 			if(child.getChildCount() > 1) {
@@ -431,6 +417,8 @@ public class sPlashParser {
 			expr.put(Constant.FUNCTION, funcList);
 			funcMap.put(Constant.VARIABLE, child.getChild(0).getText());
 			updateArgsValue(child.getChild(2), funcMap);
+		} else if(name.equals(Constant.ARRAYS_DEF)) {
+			updateArrays(child, map);
 		}
 	}
 
@@ -449,23 +437,45 @@ public class sPlashParser {
 			List<Map<String, Object>> values = new ArrayList<>();
 			map.put(Constant.VARIABLE, values);
 			Map<String, Object> variableValues = new LinkedHashMap<>();
-			if(p.getChild(0).getChildCount() > 1) {
-				if(p.getChild(0).getChild(2).getChildCount() > 3) {
-					variableValues.put(Constant.IS_ARRAY, false);
-					variableValues.put(Constant.IS_MATRIX, true);
-					variableType = p.getChild(0).getChild(2).getChild(2).getText();
-				}else if(p.getChild(0).getChild(2).getChildCount() > 1) {
+			if(p.getChild(0).getChildCount() > 2) {
+				String className = getClassName(p.getChild(0).getChild(2));
+				if(className.equals(Constant.POSITION)) {
+					variableType = null;
 					variableValues.put(Constant.IS_ARRAY, true);
 					variableValues.put(Constant.IS_MATRIX, false);
-					variableType = p.getChild(0).getChild(2).getChild(1).getText();
+					List<Map<String, Object>> pos = new ArrayList<>();
+					variableValues.put(Constant.POSITION, pos);
+					Map<String, Object> position = new LinkedHashMap<>();
+					pos.add(position);
+					insertTypeIntoMap(position, p.getChild(0).getChild(2));
 				} else {
-					variableValues.put(Constant.IS_ARRAY, false);
-					variableValues.put(Constant.IS_MATRIX, false);
-					variableType = p.getChild(0).getChild(2).getChild(0).getText();
+					if(p.getChild(0).getChildCount() > 1) {
+						if(p.getChild(0).getChild(2).getChildCount() > 3) {
+							variableValues.put(Constant.IS_ARRAY, true);
+							variableValues.put(Constant.IS_MATRIX, true);
+							variableType = p.getChild(0).getChild(2).getChild(2).getText();
+						}else if(p.getChild(0).getChild(2).getChildCount() > 1) {
+							variableValues.put(Constant.IS_ARRAY, true);
+							variableValues.put(Constant.IS_MATRIX, false);
+							variableType = p.getChild(0).getChild(2).getChild(1).getText();
+						} else {
+							variableValues.put(Constant.IS_ARRAY, false);
+							variableValues.put(Constant.IS_MATRIX, false);
+							variableType = p.getChild(0).getChild(2).getChild(0).getText();
+						}
+					} else {
+						variableType = null;
+						variableValues.put(Constant.IS_ARRAY, false);
+						variableValues.put(Constant.IS_MATRIX, false);
+					}
 				}
 			} else {
 				variableType = null;
+				variableValues.put(Constant.IS_ARRAY, false);
+				variableValues.put(Constant.IS_MATRIX, false);
 			}
+			
+			
 
 			values.add(variableValues);
 			variableValues.put(Constant.NAME, variableName);
@@ -546,31 +556,20 @@ public class sPlashParser {
 		}
 		Collections.sort(states, new Comparator<Map<String, Object>>() {
 			@Override
-			@SuppressWarnings("unchecked")
 			public int compare(Map<String, Object> map1, Map<String, Object> map2) {
 				String key1 = map1.keySet().iterator().next();
-                String key2 = map2.keySet().iterator().next();
-                if (key1.equals(Constant.VARIABLE) && !key2.equals(Constant.VARIABLE)) {
-                    return -1; // Map with key "variable" comes first
-                } else if (!key1.equals(Constant.VARIABLE) && key2.equals(Constant.VARIABLE)) {
-                    return 1;
-                } else if (key1.equals(Constant.VARIABLE)) {
-                    Object type1 = ((List<Map<String, Object>>)map1.get(Constant.VARIABLE)).get(0).get(Constant.TYPE);
-                    Object type2 = ((List<Map<String, Object>>)map2.get(Constant.VARIABLE)).get(0).get(Constant.TYPE);
-
-                    if (type1 != null && type2 == null) {
-                        return -1; // Map with non-null "type" comes first
-                    } else if (type1 == null && type2 != null) {
-                        return 1;
-                    }
-                } else if (key1.startsWith(Constant.DECLARATION)) {
-                    return -1; // Declarations come next
-                } else if (key2.startsWith(Constant.DECLARATION)) {
-                    return 1; // Declarations come next
-                } else {
-                    return 0; // Order doesn't matter for other keys
-                }
-				return 0;
+				String key2 = map2.keySet().iterator().next();
+				if (key1.equals(Constant.VARIABLE) && !key2.equals(Constant.VARIABLE)) {
+					return -1; // Map with key "variable" comes first
+				} else if (!key1.equals(Constant.VARIABLE) && key2.equals(Constant.VARIABLE)) {
+					return 1;
+				} else if (key1.startsWith(Constant.DECLARATION)) {
+					return -1; // Declarations come next
+				} else if (key2.startsWith(Constant.DECLARATION)) {
+					return 1; // Declarations come next
+				} else {
+					return 0; // Order doesn't matter for other keys
+				}
 			}
 		});
 	}

@@ -1,8 +1,10 @@
 (* Testing comments * )
-(* Coments work just fine *)
+(* Comments work just fine *)
 d:Int = 4;
+x:Int = d;
 
-main:Void(a:[Int], x:Int, b:Int where b == x && b == d) {
+main:Void(a:[Int], b:Int where b == x && b == d) {
+	czs:Int = array[0];
 	printf("%d", 2*2.0);
 	a(2*2.0);
 	printf("a %i %s %i", 1, "a", 3);
@@ -14,7 +16,8 @@ main:Void(a:[Int], x:Int, b:Int where b == x && b == d) {
 	}
 	d:Int = 4;
 	d = 5;
-	a[d * 2 + b()];
+	(* this should be invalid but since it doesn't change anything in the code it doesn't matter *)
+	a[d * x + b() * a(2.0)];
 	return ;
 }
 

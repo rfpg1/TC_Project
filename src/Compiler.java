@@ -37,6 +37,20 @@ public class Compiler {
 
 	private void addPreludeFunctions() {
 		emitter.insert("declare void @printf(i8* noundef, ...) #" + emitter.getFunctionCount(), 0);
+		emitter.insert("declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #" + emitter.getFunctionCount(), 0);
+		emitter.insert("declare noalias noundef i8* @malloc(i64 noundef) local_unnamed_addr #" + emitter.getFunctionCount(), 0);
+		emitter.insert(createArrayFunction(), 0);
+	}
+
+	private String createArrayFunction() {
+		String result = 
+				"define dso_local noalias i32* @createArray(i8* nocapture readnone %0, i32 noundef %1) local_unnamed_addr #"+ emitter.getFunctionCount() + " { "  + "\n"
+						+ " %3 = sext i32 %1 to i64" + "\n"
+						+ " %4 = shl nsw i64 %3, 2 " + "\n"
+						+ " %5 = tail call noalias i8* @malloc(i64 noundef %4)" + "\n"
+						+ " %6 = bitcast i8* %5 to i32*" + "\n"
+						+ " ret i32* %6}";
+		return result;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -68,10 +82,10 @@ public class Compiler {
 			if(isArray) {
 				size += "*";
 			}
-//			boolean isMatrix = (boolean) param.get(Constant.IS_MATRIX);
-//			if(isMatrix) {
-//				size += "*";
-//			}
+			//			boolean isMatrix = (boolean) param.get(Constant.IS_MATRIX);
+			//			if(isMatrix) {
+			//				size += "*";
+			//			}
 			emitter.insert(pointerName + " = alloca " + size);
 			name = "%" + name;
 			emitter.insert("store " + size + " " + name + ", " + size + "* " + pointerName);			
@@ -151,9 +165,6 @@ public class Compiler {
 					for(Map<String, Object> funcCall : (List<Map<String, Object>>) statement.get(Constant.FUNCTION_CALL)) {
 						addFunctionCall(funcCall, index);
 					}					
-				} else if(key.equals(Constant.ARRAYS)) {
-					List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(Constant.ARRAYS);
-					addArrays(arrays, index);
 				} else if(key.equals(Constant.DECLARATION)) {
 					List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(Constant.DECLARATION);
 					addDeclaration(arrays, 0);
@@ -202,21 +213,24 @@ public class Compiler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void addArrays(List<Map<String, Object>> arrays, int index) {
-		for(Map<String, Object> array : arrays) {
-			String size = getSize((String) array.get(Constant.ARRAY_TYPE));
-			String name = (String) array.get(Constant.VARIABLE);
-			if(context.hasVar(name)) {
-				name = emitter.getConst(name);
-			} else {
-				name = emitter.getPointerName(name);
-			}
-			Map<String, Object> pos = ((List<Map<String, Object>>) array.get(Constant.VALUE)).get(0);
-			String position = getPosition(pos, index);
-			String tempVar = "%temp_var" + emitter.getCountVars();
-			emitter.insert(tempVar + " = load " + size + "*, " + size + "** " + name, index);
-			emitter.insert("getelementptr inbounds " + size + ", " + size + "* " + tempVar + ", i32 " + position, index);
+	private String addArrays(Map<String, Object> array, int index) {
+		String size = getSize((String) array.get(Constant.ARRAY_TYPE));
+		String name = (String) array.get(Constant.VARIABLE);
+		if(context.hasVar(name)) {
+			name = emitter.getConst(name);
+		} else {
+			name = emitter.getPointerName(name);
 		}
+		Map<String, Object> pos = ((List<Map<String, Object>>) array.get(Constant.VALUE)).get(0);
+		String position = getPosition(pos, index);
+		String tempVar = "%temp_var" + emitter.getCountVars();
+		emitter.insert(tempVar + " = load " + size + "*, " + size + "** " + name, index);
+		String indexVar = "%temp_var" + emitter.getCountVars();
+		emitter.insert(indexVar + " = getelementptr inbounds " + size + ", " + size + "* " + tempVar + ", i32 " + position, index);
+		String result = "%result_var" + emitter.getCountVars();
+		emitter.insert(result + " = load " + size + ", " + size + "* " + indexVar, index);
+		return result;
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -476,47 +490,116 @@ public class Compiler {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void addVariable(Map<String, Object> statement, int index) {
 		String type = (String) statement.get(Constant.TYPE);
 		String name = (String) statement.get(Constant.NAME);
-
-		if(type != null) {
-			String size = getSize((String) statement.get(Constant.TYPE));
-			boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
-			if(isArray) {
-				size += "*";
-			}
-			String v = emitter.getPointerName(name);
-			String value = getValue(statement, name, size, index);
-			if(value != null && value.matches("\"(.+?)\"")) {
-				emitter.insert(v + " = alloca " + size, index);
-				String strName = "@.str." + emitter.getStringCount();
-				value = value.substring(1, value.length() - 1);
-				emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
-						+ " x i8] c\"" + value + "\\00\"", 0);
-				emitter.insert("store " + size + " getelementptr inbounds ([" + (value.length() + 1) 
-						+ " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0), " 
-						+ size + "* " + v, index);
-			} else {
-				emitter.insert(v + " = alloca " + size, index);
-				emitter.insert("store " + size + " " + value + ", " + size + "* " + v, index);
-			}
+		boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
+		List<Map<String, Object>> pos = (List<Map<String, Object>>) statement.get(Constant.POSITION);
+		if(pos != null) {
+			assignmentToPosition(statement, index);
 		} else {
-			String value = getValue(statement, name, null, index);
-			if(context.hasVar(name)) {
-				name = emitter.getConst(name);
+			if(type != null) {
+				String size = getSize((String) statement.get(Constant.TYPE));
+				if(isArray) {
+					size += "*";
+				}
+				String v = emitter.getPointerName(name);
+				String value = getValue(statement, name, size, index);
+				if(value != null && value.matches("\"(.+?)\"")) {
+					emitter.insert(v + " = alloca " + size, index);
+					String strName = "@.str." + emitter.getStringCount();
+					value = value.substring(1, value.length() - 1);
+					emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
+							+ " x i8] c\"" + value + "\\00\"", 0);
+					emitter.insert("store " + size + " getelementptr inbounds ([" + (value.length() + 1) 
+							+ " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0), " 
+							+ size + "* " + v, index);
+				} else {
+					emitter.insert(v + " = alloca " + size, index);
+					emitter.insert("store " + size + " " + value + ", " + size + "* " + v, index);
+				}
 			} else {
-				name = emitter.getPointerName(name);
-			}
+				String value = getValue(statement, name, null, index);
+				String size = getSize((String) statement.get(Constant.VALUE_TYPE)) != null ? getSize((String) statement.get(Constant.VALUE_TYPE)) : "i32";
 
-			String size = getSize((String) statement.get(Constant.VALUE_TYPE));
-			if(size == null) {
-				emitter.insert("store " + "i32" + " " + value + ", " + "i32" + "* " + name, index);	
-			} else {
-				emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
+				if(context.hasVar(name)) {
+					name = emitter.getConst(name);
+				} else {
+					name = emitter.getPointerName(name);
+				}
+
+				if(value.equals("true") || value.equals("false")) {
+					value = getBooleanValue(value);
+					emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
+				} else if(value.startsWith("\"")) {
+					String strName = "@.str." + emitter.getStringCount();
+					value = value.substring(1, value.length() - 1);
+					emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
+							+ " x i8] c\"" + value + "\\00\"", 0);
+					emitter.insert("store " + size + " getelementptr inbounds ([" + (value.length() + 1) 
+							+ " x i8], [" + (value.length() + 1) + " x i8]* " + strName + " , i64 0, i64 0), " 
+							+ size + "* " + name, index);
+				} else {
+					emitter.insert("store " + size + " " + value + ", " + size + "* " + name, index);
+				}
 			}
 		}
+	}
 
+	@SuppressWarnings("unchecked")
+	private void assignmentToPosition(Map<String, Object> statement, int index) {
+		String type = (String) statement.get(Constant.VALUE_TYPE);
+		String size = getSize(type);
+		String value;
+		String name = (String) statement.get(Constant.NAME);
+		if(context.hasVar(name)) {
+			name = emitter.getConst(name);
+		} else {
+			name = emitter.getPointerName(name);
+		}
+		
+		String strName = "";
+		
+		if(type.equals(Constant.STRING)) {
+			value = getValue(statement, type, size, index);
+			strName = "@.str." + emitter.getStringCount();
+			value = value.substring(1, value.length() - 1);
+			emitter.insert( strName + " = private unnamed_addr constant [" + (value.length() + 1) 
+					+ " x i8] c\"" + value + "\\00\"", 0);
+		} else {
+			value = getValue(statement, type, size, index);
+		}
+		
+		boolean isArray = (boolean) statement.get(Constant.IS_ARRAY);
+		if(isArray) {
+			size += "*";
+		}
+		String tempVar = "%temp_var" + emitter.getCountVars();
+		emitter.insert(tempVar + " = load " + size + ", " + size + "* " + name, index);
+		String tempVar2 = "%temp_var" + emitter.getCountVars();
+		Map<String, Object> pos = ((List<Map<String, Object>>)statement.get(Constant.POSITION)).get(0);
+		pos = ((List<Map<String, Object>>)pos.get(Constant.VALUE)).get(0);
+		String position = getPosition(pos, 0);
+		emitter.insert(tempVar2 + " = getelementptr inbounds " + size.substring(0, size.length() - 1) 
+					+ ", " + size + " " + tempVar + ", i64 " + position, index);
+		storeNewValue(size, value, type, tempVar2, index, strName);
+	}
+
+	private void storeNewValue(String size, String value, String type, String tempVar2, int index, String strName) {
+		switch(type) {
+		case Constant.STRING:
+			emitter.insert("store " + size.substring(0, size.length()-1) + " getelementptr inbounds"
+					+ "([" + (value.length() + 1) + " x i8], [" + (value.length() + 1) + " x i8]*"
+							+ " " + strName + ", i64 0, i64 0), " + size + " " + tempVar2, index);
+			break;
+		case Constant.INT:
+		case Constant.DOUBLE:
+			emitter.insert("store " + size.substring(0, size.length() - 1) + " " + value 
+					+ ", " + size + " " + tempVar2, index);
+			System.out.println("");
+			break;			
+		}
 	}
 
 	private String getParams(List<Map<String, Object>> params) {
@@ -573,7 +656,7 @@ public class Compiler {
 		String type = (String) child.get(Constant.VALUE_TYPE);
 		if(!type.equals(Constant.FUNCTION_CALL) && !type.equals(Constant.VARIABLE) 
 				&& !type.equals(Constant.EXPR) && !type.equals(Constant.BOOLEAN)
-				&& !type.equals(Constant.STRING)) {
+				&& !type.equals(Constant.STRING) && !type.equals(Constant.ARRAYS)) {
 			return (String) child.get(Constant.VALUE);
 		} else {
 			if(type.equals(Constant.FUNCTION_CALL)) {
@@ -584,6 +667,15 @@ public class Compiler {
 				String params = getParamsFunctionCall((List<Map<String, Object>>) func.get(Constant.PARAMETERS), index);
 				String rType = (String) ((Triple<List<?>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond().get(Constant.TYPE);
 				size = getSize(rType);
+				boolean isArray = (boolean) child.get(Constant.IS_ARRAY);
+				boolean isMatrix = (boolean) child.get(Constant.IS_MATRIX);
+				if(isArray) {
+					size += "*";
+				}
+				if(isMatrix) {
+					size += "*";
+				}
+
 				emitter.insert(v1 + " = call " + size + " @" + funcName + "(" + params + ")", index);
 				return v1;
 			} else if(type.equals(Constant.EXPR)) {
@@ -594,6 +686,9 @@ public class Compiler {
 			} else if(type.equals(Constant.BOOLEAN)){
 				String value = (String) child.get(Constant.VALUE);
 				return getBooleanValue(value);
+			} else if(type.equals(Constant.ARRAYS)) {
+				List<Map<String, Object>> value = (List<Map<String, Object>>) child.get(Constant.VALUE);
+				return addArrays(value.get(0), index);
 			} else {
 				String value = (String) child.get(Constant.VALUE);
 				return value;
@@ -615,10 +710,23 @@ public class Compiler {
 		for(int i = 0; i < params.size(); i++) {
 			Map<String, Object> param = params.get(i);
 			String valueType = (String) param.get(Constant.VALUE_TYPE);
+			String size;
+			if(valueType != null && !valueType.equals(Constant.VARIABLE) 
+					&& !valueType.equals(Constant.FUNCTION_CALL) && !valueType.equals(Constant.ARRAYS)) {
+				size = getSize(valueType);
+			} else {
+				String actualValueType = (String) param.get(Constant.VALUE_ACTUAL_TYPE);
+				size = getSize(actualValueType);
+			}
+
+			boolean isArray = param.get(Constant.IS_ARRAY) != null ? (boolean) param.get(Constant.IS_ARRAY) : false;
+			if(isArray) {
+				size += "*";
+			}
 			if(valueType != null) {
 				if(valueType.equals(Constant.INT) || valueType.equals(Constant.DOUBLE)) {
 					String value = (String) param.get(Constant.VALUE);
-					bob.append("i32 " + value);
+					bob.append(size + " " + value);
 				} else if(valueType.equals(Constant.VARIABLE)) {
 					String var = "%new_var" + emitter.getCountVars();
 					String varName = (String) param.get(Constant.VALUE);
@@ -628,8 +736,8 @@ public class Compiler {
 					} else {
 						v = emitter.getPointerName(varName);
 					}
-					emitter.insert(var + " = load i32, i32* " + v);
-					bob.append("i32 " + var);
+					emitter.insert(var + " = load " + size + ", " + size + "* " + v);
+					bob.append(size + " " + var);
 				} else if(valueType.equals(Constant.STRING)) {
 					String strName = "@.str." + emitter.getStringCount();
 					String value = (String) param.get(Constant.VALUE);
@@ -648,6 +756,25 @@ public class Compiler {
 					Map<String, Object> expr = ((List<Map<String, Object>>)param.get(Constant.VALUE)).get(0);
 					String value = getExprValue(expr, null, null, null, index);
 					bob.append("i32 " + value);
+				} else if(valueType.equals(Constant.ARRAYS)) {
+					Map<String, Object> position = ((List<Map<String, Object>>) param.get(Constant.VALUE)).get(0);
+					String varName = (String) position.get(Constant.VARIABLE);
+					String v;
+					if(context.hasVar(varName) ) {
+						v = emitter.getConst(varName);
+					} else {
+						v = emitter.getPointerName(varName);
+					}
+					String var = "%new_var" + emitter.getCountVars();
+					emitter.insert(var + " = load " + size + ", " + size + "* " + v);
+
+					position = ((List<Map<String, Object>>) position.get(Constant.VALUE)).get(0);
+					String pos = getPosition(position, index);
+					String tempVar = "%temp_var" + emitter.getCountVars();
+					emitter.insert(tempVar + " = getelementptr inbounds " + size.substring(0, size.length() - 1) + ", " +size  + " " + var + ", i64 " + pos, index);
+					String tempVar1 = "%temp_var" + emitter.getCountVars();
+					emitter.insert(tempVar1 + " = load " + size.substring(0, size.length() - 1) + ", " + size + " " + tempVar, index);
+					bob.append(size.substring(0, size.length() - 1) + " " + tempVar1);
 				}
 			} else {
 				String temp = "%temp_" + emitter.getCountVars();

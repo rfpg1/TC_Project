@@ -68,11 +68,6 @@ public class Verifier {
 						Map<String, Object> elseStatement = ((List<Map<String, Object>>) statement.get(key)).get(0);
 						List<Map<String, Object>> states = (List<Map<String, Object>>) elseStatement.get(Constant.STATEMENT);
 						verify(context, states);
-					} else if(key.equals(Constant.ARRAYS)) {
-						List<Map<String, Object>> arrays = (List<Map<String, Object>>) statement.get(key);
-						for(Map<String, Object> array : arrays) {
-							checkValidArray(array, context);
-						}
 					} else if(key.equals(Constant.FUNCTION_CALL)) {
 						if(context.getCurrentFunction() == null) {
 							throw new FunctionException("Function calls can only occur inside a function");
@@ -415,7 +410,11 @@ public class Verifier {
 
 	@SuppressWarnings("unchecked")
 	private void checkFunction(Map<String, Object> func, String key, Context context) throws CompilerException {
-		context.insertFunction((String) func.get(Constant.NAME));
+		String funcName = (String) func.get(Constant.NAME);
+		if(funcName.equals(Constant.MAIN)) {
+			verifiyParamsAreCorrect(func);
+		}
+		context.insertFunction(funcName);
 		context.setCurrentFunction((String)func.get(Constant.NAME));
 		for(Map<String, Object> param : (List<Map<String, Object>>) func.get(Constant.PARAMETERS)) {
 			String name = (String)param.get(Constant.NAME);
@@ -442,6 +441,24 @@ public class Verifier {
 
 		}
 		verify(context, (List<Map<String, Object>>) func.get(Constant.STATEMENT));
+	}
+
+	@SuppressWarnings("unchecked")
+	private void verifiyParamsAreCorrect(Map<String, Object> func) throws CompilerException {
+		List<Map<String, Object>> params = (List<Map<String, Object>>) func.get(Constant.PARAMETERS);
+		if(params.size() > 2) {
+			throw new FunctionException("Function main only receives two parameters (Int and [String])");
+		}
+		String type = (String) params.get(0).get(Constant.TYPE);
+		boolean isArray = (boolean) params.get(0).get(Constant.IS_ARRAY);
+		if(!type.equals(Constant.INT) || isArray) {
+			throw new FunctionException("First parameter has to be Int and can't be an array");
+		}
+		type = (String) params.get(1).get(Constant.TYPE);
+		isArray = (boolean) params.get(1).get(Constant.IS_ARRAY);
+		if(!type.equals(Constant.STRING) || !isArray) {
+			throw new FunctionException("Second parameters has to be String and array");
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -523,8 +540,18 @@ public class Verifier {
 			if(!context.hasVar(name)) {
 				throw new VariableException("Variable: " + name + " doesn't exist");
 			} else {
+				List<Map<String, Object>> position = (List<Map<String, Object>>) variable.get(Constant.POSITION);
 				boolean isArray = ((Triple<Object, Boolean, Object>)context.getType(name)).getSecond();
-				checkArray(isArray, variable, context);
+				if(position != null && isArray) {
+					position = (List<Map<String, Object>>) position.get(0).get(Constant.VALUE);
+					checkPosition(position, context, name);
+					String valueType = (String)variable.get(Constant.VALUE_TYPE);
+					String actualType = (String) ((Triple<List<Object>, Boolean, Boolean>) context.getType(name)).getFirst().get(0);
+					checkType(actualType, valueType, variable, context);
+					
+				} else {
+					checkArray(isArray, variable, context);
+				}
 			}
 		} else {
 			boolean isArray = (boolean) variable.get(Constant.IS_ARRAY);
@@ -537,25 +564,36 @@ public class Verifier {
 					v = variable.get(Constant.VALUE_FUNC);
 				}
 				if(v instanceof ArrayList) {
+					String varType = (String) variable.get(Constant.VALUE_TYPE);
 					Map<String, Object> value = ((List<Map<String, Object>>) v).get(0);
-					String t = (String) variable.get(Constant.VALUE_TYPE);
-					if(t.equals(Constant.EXPR) && context.getCurrentFunction() == null) {
-						throw new VariableException("Variable: " + name + " can't be defined as an expression since there is no function defined yet");
-					}
-					String valueType = getValueType(value, null, context, isArray);
-					checkType(type, valueType, variable, context);
-					checkArray(isArray, variable, context);
-					String variableValueType = (String) variable.get(Constant.VALUE_TYPE);
-					if(variableValueType.equals(Constant.FUNCTION_CALL)) {
-						if(context.getCurrentFunction() == null) {
-							throw new FunctionException("Function calls aren't valid when declaring functions");
+					if(varType != null && varType.equals(Constant.ARRAYS)) {
+						checkValidArray(value, context);
+						if(context.getCurrentFunction() == null)
+							context.setType(name, type, isArray, isMatrix, value, true);
+						else
+							context.setType(name, type, isArray, isMatrix, value, false);
+					} else {
+						
+						String t = (String) variable.get(Constant.VALUE_TYPE);
+						if(t.equals(Constant.EXPR) && context.getCurrentFunction() == null) {
+							throw new VariableException("Variable: " + name + " can't be defined as an expression since there is no function defined yet");
 						}
-						checkParams(context, (List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC), name);
+						String valueType = getValueType(value, null, context, isArray);
+						checkType(type, valueType, variable, context);
+						checkArray(isArray, variable, context);
+						String variableValueType = (String) variable.get(Constant.VALUE_TYPE);
+						if(variableValueType.equals(Constant.FUNCTION_CALL)) {
+							if(context.getCurrentFunction() == null) {
+								throw new FunctionException("Function calls aren't valid when declaring functions");
+							}
+							checkParams(context, (List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC), name);
+						}
+						if(context.getCurrentFunction() == null)
+							context.setType(name, type, isArray, isMatrix, value, true);
+						else
+							context.setType(name, type, isArray, isMatrix, value, false);
 					}
-					if(context.getCurrentFunction() == null)
-						context.setType(name, type, isArray, isMatrix, value, true);
-					else
-						context.setType(name, type, isArray, isMatrix, value, false);
+					
 				} else {
 					String valueType = (String) variable.get(Constant.VALUE_TYPE);
 					checkType(type, valueType, variable, context);
@@ -590,7 +628,7 @@ public class Verifier {
 			}
 			List<Map<String, Object>> actualParams = func.getFirst();
 			if(params.size() != actualParams.size()) {
-				throw new FunctionException("Function: " + funcName + " receives: " + actualParams.size() + " params and not " + params.size());
+				throw new FunctionException("Function: " + funcName + " receives: " + actualParams.size() + " params but got " + params.size());
 			}
 			for(int i = 0; i < actualParams.size(); i++) {
 				Map<String, Object> mapParams = (Map<String, Object>)actualParams.get(i);
@@ -618,10 +656,13 @@ public class Verifier {
 				} else {
 					if(paramType.equals(Constant.VARIABLE)) {
 						String value = (String) params.get(i).get(Constant.VALUE);
-						Triple<Object, Boolean, Object> pair = (Triple<Object, Boolean, Object>) context.getType(value);
+						Triple<List<Object>, Boolean, Object> pair = (Triple<List<Object>, Boolean, Object>) context.getType(value);
 						if(pair == null) {
 							throw new VariableException("Variable: " + value + " used to call function: " + funcName + " doesn't exist");
 						} else {
+							params.get(i).put(Constant.VALUE_ACTUAL_TYPE, (String) pair.getFirst().get(0));
+							params.get(i).put(Constant.IS_ARRAY, (boolean)pair.getSecond());
+							params.get(i).put(Constant.IS_MATRIX, (boolean)pair.getThird());
 							boolean actualIsArray = (boolean) mapParams.get(Constant.IS_ARRAY);
 							checkArray(actualIsArray, params.get(i), context);
 						}
@@ -681,10 +722,36 @@ public class Verifier {
 			} else {
 				String expectedType = getType(positions.get(index));
 				String actualType = (String) param.get(Constant.VALUE_TYPE);
-				if(actualType.equals(Constant.EXPR)) {
+				if(actualType == null) {
+					String varName = (String) ((List<Map<String, Object>>)param.get(Constant.FUNCTION)).get(0).get(Constant.VARIABLE);
+					Triple<List<Object>, Map<String, Object>,Object> triple = (Triple<List<Object>, Map<String, Object>,Object>) context.getFunction(varName);
+					Map<String, Object> map = triple.getSecond();
+					actualType = (String) map.get(Constant.TYPE);
+					param.put(Constant.IS_ARRAY, (boolean) map.get(Constant.IS_ARRAY));
+					param.put(Constant.IS_MATRIX, (boolean) map.get(Constant.IS_MATRIX));
+				} else if(actualType.equals(Constant.EXPR)) {
 					Map<String, Object> expr = ((List<Map<String, Object>>)param.get(Constant.VALUE)).get(0);
 					actualType = getValueType(expr, null, null, false);
+					param.put(Constant.IS_ARRAY, false);
+					param.put(Constant.IS_MATRIX, false);
+				} else if(actualType.equals(Constant.VARIABLE)) {
+					Triple<List<Object>, Boolean, Boolean> triple = (Triple<List<Object>, Boolean, Boolean>) context.getType((String)param.get(Constant.VALUE));
+					actualType = (String) triple.getFirst().get(0);
+					boolean isArray = (boolean) triple.getSecond();
+					boolean isMatrix = (boolean) triple.getThird();
+					param.put(Constant.IS_ARRAY, isArray);
+					param.put(Constant.IS_MATRIX, isMatrix);
+				} else if(actualType.equals(Constant.ARRAYS)) {
+					String varName = (String) ((List<Map<String, Object>>) param.get(Constant.VALUE)).get(0).get(Constant.VARIABLE);
+					Triple<List<Object>, Boolean, Boolean> triple = (Triple<List<Object>, Boolean, Boolean>) context.getType(varName);
+					actualType = (String) triple.getFirst().get(0);
+					boolean isArray = (boolean) triple.getSecond();
+					boolean isMatrix = (boolean) triple.getThird();
+					param.put(Constant.IS_ARRAY, isArray);
+					param.put(Constant.IS_MATRIX, isMatrix);
 				}
+				param.put(Constant.VALUE_ACTUAL_TYPE, actualType);
+
 				if(!expectedType.equals(actualType)) {
 					throw new TypeException(positions.get(index).getFirst() + " is trying to refer to a: " + expectedType + " and got: " + actualType);
 				}
@@ -702,6 +769,8 @@ public class Verifier {
 			return Constant.INT;
 		case "%d":
 			return Constant.DOUBLE;
+		case "%b":
+			return Constant.BOOLEAN;
 		}
 		return null;
 	}
@@ -729,7 +798,7 @@ public class Verifier {
 						throw new TypeException("Can't assign a value to an array");
 					}
 				} else if(valueType.equals(Constant.FUNCTION_CALL)) {
-					List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(Constant.VALUE)).get(0).get(Constant.FUNCTION);
+					List<Map<String, Object>> function = (List<Map<String, Object>>) ((List<Map<String, Object>>)variable.get(Constant.VALUE_FUNC)).get(0).get(Constant.FUNCTION);
 					String funcName = (String) function.get(0).get(Constant.VARIABLE);
 					Map<String, Object> rValue = ((Triple<List<String>, Map<String, Object>, Object>)context.getFunction(funcName)).getSecond();
 					boolean funcArray = (boolean) rValue.get(Constant.IS_ARRAY);

@@ -109,6 +109,36 @@ public class Main {
 	}
 
 	private static void addPreludeFunctions(Context context) {
+		addPrintFunction(context);
+		addCreateArrayFunction(context);
+	}
+
+
+	private static void addCreateArrayFunction(Context context) {
+		Map<String, Object> returnType = new HashMap<>();
+		returnType.put(Constant.TYPE, Constant.INT);
+		returnType.put(Constant.IS_ARRAY, true);
+		List<Map<String, Object>> paramsType = new ArrayList<>();
+		Map<String, Object> param = new HashMap<>();
+		param.put(Constant.NAME, "name");
+		param.put(Constant.IS_ARRAY, false);
+		param.put(Constant.IS_MATRIX, false);
+		param.put(Constant.TYPE, Constant.STRING);
+		paramsType.add(param);
+		
+		param = new HashMap<>();
+		param.put(Constant.NAME, "size");
+		param.put(Constant.IS_ARRAY, false);
+		param.put(Constant.IS_MATRIX, false);
+		param.put(Constant.TYPE, Constant.INT);
+		paramsType.add(param);
+		
+		context.setFunction("createArray", new Triple<>(paramsType, returnType, null));
+		context.insertFunction("createArray");
+	}
+
+
+	private static void addPrintFunction(Context context) {
 		Map<String, Object> returnType = new HashMap<>();
 		returnType.put(Constant.TYPE, Constant.VOID);
 		returnType.put(Constant.IS_ARRAY, false);

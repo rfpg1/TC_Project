@@ -51,6 +51,10 @@ public class Constant {
 	public static final String ARRAY_TYPE = "ArrayType";
 	public static final String IS_MATRIX = "isMatrix";
 	public static final String REFINEMENT_VALUE = "RefinementValue";
+	public static final String ARRAYS_DEF = "Array_def";
+	public static final String VALUE_ACTUAL_TYPE = "valueActualType";
+	public static final Object MAIN = "main";
+
 
 	public static final int VARIABLE_TYPE = 35;
 	public static final int BOOLEAN_TYPE = 7;
@@ -60,7 +64,7 @@ public class Constant {
 	public static final String[] BOOLEAN_OPERATOR = {"&&", "||"};
 	
 	public static final String PRINT_F = "printf";
-	public static final String[] PLACE_HOLDERS = {"%s", "%i", "%f", "%d"};
+	public static final String[] PLACE_HOLDERS = {"%s", "%i", "%b", "%d"};
 	
 	
 	public static String getOperatorType(String op) {
