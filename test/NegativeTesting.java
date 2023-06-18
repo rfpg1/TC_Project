@@ -1,3 +1,5 @@
+
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,7 +30,7 @@ class NegativeTesting {
 	void test() {
 		for(String file : files) {
 			String[] args = new String[]{"tests"+ File.separator + "negative" + File.separator + file};
-			assertThrows(CompilerException.class, () ->Main.main(args));			
+			assertThrows(CompilerException.class, () -> Main.main(args));			
 		}
 		assertTrue(true);
 	}

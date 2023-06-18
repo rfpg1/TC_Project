@@ -5,7 +5,7 @@ import java.util.List;
 
 public class BooleanExpressionUtils {
 
-	private List<String> constrainst;
+	private List<String> constraints;
 	private List<String> operators;
 	private Emitter emitter;
 	private boolean isMath;
@@ -13,7 +13,7 @@ public class BooleanExpressionUtils {
 	private List<String> priorityOperators;
 	
 	public BooleanExpressionUtils(Emitter emitter) {
-		constrainst = new ArrayList<>();
+		constraints = new ArrayList<>();
 		operators = new ArrayList<>();
 		priorityOperators = new ArrayList<>();
 		priorityConstraints = new ArrayList<>();
@@ -26,7 +26,7 @@ public class BooleanExpressionUtils {
 			isMath = !isMath;
 			priorityConstraints.add(s);
 		} else {
-			constrainst.add(s);
+			constraints.add(s);
 		}
 	}
 	
@@ -39,21 +39,26 @@ public class BooleanExpressionUtils {
 	}
 
 	public String solveExpr(int index) {
-		solvePriority(index);
-		String tempVar = null;
-		for(String operator : operators) {
-			String first = constrainst.get(0);
-			String second = constrainst.get(1);
-			tempVar = "%temp_var" + emitter.getCountVars();
-			switchCase(operator, tempVar, first, second, index);
-			constrainst.add(0, tempVar);
+		
+		String tempVar = solvePriority(index);
+		if(operators.size() == 0 && constraints.size() == 1) {
+			tempVar = constraints.get(0);
+		} else {
+			for(String operator : operators) {
+				String first = constraints.get(0);
+				String second = constraints.get(1);
+				tempVar = "%temp_var" + emitter.getCountVars();
+				switchCase(operator, tempVar, first, second, index);
+				constraints.add(0, tempVar);
+			}
 		}
-		constrainst = new ArrayList<>();
+		
+		constraints = new ArrayList<>();
 		operators = new ArrayList<>();
 		return tempVar;
 	}
 
-	private void solvePriority(int index) {
+	private String solvePriority(int index) {
 		String tempVar = null;
 		for(String operator : priorityOperators) {
 			String first = priorityConstraints.get(0);
@@ -63,10 +68,11 @@ public class BooleanExpressionUtils {
 			priorityConstraints.add(0, tempVar);
 		}
 		if(tempVar != null) {
-			constrainst.add(tempVar);
+			constraints.add(tempVar);
 		}
 		priorityConstraints = new ArrayList<>();
 		priorityOperators = new ArrayList<>();
+		return tempVar;
 	}
 
 	private void switchCase(String op, String tempVar, String first, String second, int index) {

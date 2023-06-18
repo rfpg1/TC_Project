@@ -22,7 +22,7 @@ bExpr_0:
 %temp_var4 = load i32, i32* %pont_a
 %temp_var5 = load i32, i32* %pont_b
 %temp_var6 = icmp sgt i32 %temp_var4, %temp_var5
-br i1 null, label %end_label1, label %end_label1
+br i1 %temp_var6, label %end_label1, label %end_label1
 end_label1:
 %ret_7 = load i32, i32* %pont_b
 ret i32 %ret_7
@@ -42,14 +42,14 @@ bExpr_8:
 %temp_var12 = load i32, i32* %pont_a
 %temp_var13 = load i32, i32* %pont_b
 %temp_var14 = icmp sgt i32 %temp_var12, %temp_var13
-br i1 null, label %end_label9, label %end_label9
+br i1 %temp_var14, label %end_label9, label %end_label9
 end_label9:
 br label %bExpr_15
 bExpr_15:
 %temp_var19 = load i32, i32* %pont_b
 %temp_var20 = load i32, i32* %pont_a
 %temp_var21 = icmp sgt i32 %temp_var19, %temp_var20
-br i1 null, label %if_label17, label %end_label16
+br i1 %temp_var21, label %if_label17, label %end_label16
 if_label17:
 store i32 1, i32* %pont_a
 store i32 2, i32* %pont_b

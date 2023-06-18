@@ -1,0 +1,22 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{top = 0.5cm, left = 2cm, right = 2cm}
+\author{Ricardo Gonçalves}
+\title{Report - Liquid Types}
+\date{}
+\begin{document}
+\maketitle
+
+\section{What I did}
+I implement a Liquid Type Checker, which verifies if a given refinement is mathematically possible using SMTINTERPOL solver. A refinement can only be if a variable is higher than a number or another variable. To do that I used a library in java called java-smt developed by sossy-lab \footnote{\url{https://github.com/sosy-lab/java-smt}}. With this library I was able to make variables and numbers and verify that every constraint given was possible. For example: a $>$ 2 \&\& a $<$ 1, to do this, I defined that maths operations ($<$ $>$ $>=$ $<=$ $==$ $!=$) have priority over boolean operators (\&\& $||$), otherwise I could end up trying to 2 \&\& a which doesn't make any sense. So first I create a constraint that is a $>$ 2 and evaluate that and then I create a constranint a $<$ 2 and evaluate that. In the end with the \&\& operator I compared both evaluations. In the case this is obviously false since a can't be higher than 2 and lower than 1 at the same time so it raises a RefinementException explaining that these constraints are unsolvable.
+
+\section{What were the challenges}
+The initial challanges were understading how to use the library. I didn't quite understand the getting started instructions. Also trying to use other solvers, initially I wanted to use Z3 since it was the one I had heard before but for some reason I couldn't understand it wasn't available for what I tried to do giving me this error: Exception in thread "main" exception.RefinementException: The SMT solver Z3 is not available on this machine because of missing libraries (no z3 in java.library.path: /usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib).\\ 
+Besides that I also wanted to use user-defined functions but wasn't successful with that, I think my mistake was choosing Java as the main language. I believe doing this in python would have been way easier.
+
+\section{How I overcame them}
+To understand the library I dug through the github repository and tried to understand some of the examples they give and used stackoverflow as well to get some basic examples working. Related to what solver I used, I ended up using the only one that was working for the code I had written.
+\section{Future Work}
+If I had a little more time I was going to implement some functions built in to also make some refinement, for example a number to be prime. I also would like to make that it would be possible to make operations with the variable in question. For example a * 2 $>$ 0.
+\end{document}

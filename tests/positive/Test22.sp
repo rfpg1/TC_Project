@@ -4,7 +4,7 @@ sample:String();
 normal:Int(t1:Int, t2:Double);
 abs:Int where abs > 0 (val:Int);
 
-main:Void(a:Int, i:[String]) {
+main:Void(a:Int where a == 2, i:[String]) {
 	i[0] = "2";
 	printf("%s", i[0]);
 	

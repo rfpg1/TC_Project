@@ -428,7 +428,6 @@ public class Compiler {
 		List<Map<String, Object>> statements = (List<Map<String, Object>>) states.get(Constant.STATEMENT);
 		for(Map<String, Object> state : statements) {
 			if(state.containsKey(Constant.ELSE_STATEMENT)) {
-				System.out.println("");
 				List<Map<String, Object>> s = (List<Map<String, Object>>)((List<Map<String, Object>>) state.get(Constant.ELSE_STATEMENT)).get(0).get(Constant.STATEMENT);
 				return !s.isEmpty();
 			}
@@ -543,7 +542,6 @@ public class Compiler {
 		case Constant.DOUBLE:
 			emitter.insert("store " + size.substring(0, size.length() - 1) + " " + value 
 					+ ", " + size + " " + tempVar2, index);
-			System.out.println("");
 			break;			
 		}
 	}

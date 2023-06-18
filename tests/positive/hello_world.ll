@@ -21,7 +21,10 @@ define dso_local noalias i32* @createArray(i8* nocapture readnone %0, i32 nounde
 @.str.3 = private unnamed_addr constant [7 x i8] c"true\t\00"
 declare i32 @sample_normal(i32,i32) #5
 declare i32 @abs(i32) #6
-@.str.4 = private unnamed_addr constant [2 x i8] c"a\00"
+@.str.4 = private unnamed_addr constant [3 x i8] c"%i\00"
+@.str.5 = private unnamed_addr constant [3 x i8] c"%s\00"
+@.str.6 = private unnamed_addr constant [3 x i8] c"ab\00"
+@.str.7 = private unnamed_addr constant [2 x i8] c"a\00"
 define i32 @main(i32 %a, i8** %b) #4 {
 %pont_a = alloca i32
 store i32 %a, i32* %pont_a
@@ -61,31 +64,34 @@ bExpr_8:
 %temp_var12 = add i32 0, 5
 %temp_var13 = add i32 0, 4
 %temp_var14 = icmp sgt i32 %temp_var12, %temp_var13
-br i1 null, label %if_label10, label %else_label11
+br i1 %temp_var14, label %if_label10, label %else_label11
 if_label10:
 %pont_a = alloca i32
 store i32 2, i32* %pont_a
+%new_var15 = load i32, i32* %pont_a
+call void(i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.4 , i64 0, i64 0),i32 %new_var15)
 br label %end_label9
 else_label11:
-br label %bExpr_15
-bExpr_15:
-%temp_var19 = icmp eq i32 1, 1
-br i1 null, label %if_label17, label %end_label16
-if_label17:
-br label %bExpr_20
-bExpr_20:
-%temp_var24 = add i32 0, 1
-%temp_var25 = add i32 0, 2
-%temp_var26 = icmp sgt i32 %temp_var24, %temp_var25
-br i1 null, label %if_label22, label %end_label21
-if_label22:
-%str_value27 = mul i32 3 , 4
+call void(i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.5 , i64 0, i64 0),i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.6 , i64 0, i64 0))
+br label %bExpr_16
+bExpr_16:
+%temp_var20 = icmp eq i32 1, 1
+br i1 %temp_var20, label %if_label18, label %end_label17
+if_label18:
+br label %bExpr_21
+bExpr_21:
+%temp_var25 = add i32 0, 1
+%temp_var26 = add i32 0, 2
+%temp_var27 = icmp sgt i32 %temp_var25, %temp_var26
+br i1 %temp_var27, label %if_label23, label %end_label22
+if_label23:
+%str_value28 = mul i32 3 , 4
 %pont__ola = alloca i32
-store i32 %str_value27, i32* %pont__ola
-br label %end_label21
-end_label21:
-br label %bExpr_15
-end_label16:
+store i32 %str_value28, i32* %pont__ola
+br label %end_label22
+end_label22:
+br label %bExpr_16
+end_label17:
 br label %end_label9
 end_label9:
 ret i32 2
@@ -93,28 +99,28 @@ ret i32 2
 define i32 @min(i32 %i) #8 {
 %pont_i = alloca i32
 store i32 %i, i32* %pont_i
-%ret_28 = load i32, i32* %pont_i
-ret i32 %ret_28
+%ret_29 = load i32, i32* %pont_i
+ret i32 %ret_29
 }
 define i32 @mini2(i32 %i) #9 {
 %pont_i = alloca i32
 store i32 %i, i32* %pont_i
-%ret_29 = load i32, i32* %pont_i
-ret i32 %ret_29
+%ret_30 = load i32, i32* %pont_i
+ret i32 %ret_30
 }
 define i32 @maxi(i32 %a, i32 %b) #10 {
 %pont_a = alloca i32
 store i32 %a, i32* %pont_a
 %pont_b = alloca i32
 store i32 %b, i32* %pont_b
-%new_var31 = load i32, i32* %pont_a
-%callFunction_30 = call i32 @min(i32 %new_var31)
+%new_var32 = load i32, i32* %pont_a
+%callFunction_31 = call i32 @min(i32 %new_var32)
 %pont_z = alloca i32
-store i32 %callFunction_30, i32* %pont_z
+store i32 %callFunction_31, i32* %pont_z
 ret i32 2
 }
 define i8* @toString() #11 {
-ret i8* getelementptr inbounds ([2 x i8], [2 x i8]* @.str.4 , i64 0, i64 0)
+ret i8* getelementptr inbounds ([2 x i8], [2 x i8]* @.str.7 , i64 0, i64 0)
 
 }
 define i1 @b() #12 {

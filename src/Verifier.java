@@ -28,8 +28,12 @@ public class Verifier {
 
 	private SatSolver solver;
 
-	public Verifier() throws InvalidConfigurationException {
-		solver = new SatSolver();
+	public Verifier() throws CompilerException {
+		try {
+			solver = new SatSolver();
+		} catch (InvalidConfigurationException e) {
+			throw new RefinementException(e.getMessage());
+		}
 	}
 
 	@SuppressWarnings("unchecked")

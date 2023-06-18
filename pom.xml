@@ -5,6 +5,7 @@
   <version>0.0.1-SNAPSHOT</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
+	
     <testSourceDirectory>test</testSourceDirectory>
     <resources>
       <resource>
@@ -13,6 +14,7 @@
           <exclude>**/*.java</exclude>
         </excludes>
       </resource>
+      
     </resources>
         
     <plugins>
@@ -23,6 +25,53 @@
           <release>17</release>
         </configuration>
       </plugin>
+      
+      
+      <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+                <execution>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                    </goals>
+                    <configuration>
+                        <sources>
+                            <source>target/generated-sources/antlr4</source>
+                        </sources>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M5</version>
+            <configuration>
+                <includes>
+                    <include>**/Test*.java</include>
+                    <include>**/*Test.java</include>
+                </includes>
+            </configuration>
+        </plugin>
+	    
+	    <plugin>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-maven-plugin</artifactId>
+            <version>4.12.0</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>antlr4</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+      
+      
     </plugins>
   </build>
   
@@ -45,7 +94,22 @@
 	    <groupId>org.sosy-lab</groupId>
 	    <artifactId>java-smt</artifactId>
 	    <version>4.0.2</version>
+	</dependency>  
+	
+	<!-- https://mvnrepository.com/artifact/org.antlr/antlr4-runtime -->
+	<dependency>
+	    <groupId>org.antlr</groupId>
+	    <artifactId>antlr4-runtime</artifactId>
+	    <version>4.13.0</version>
 	</dependency>
-  
+	
+	<dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.8.0</version>
+        <scope>test</scope>
+    </dependency>
+
+	
   </dependencies>
 </project>

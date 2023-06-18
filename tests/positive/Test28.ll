@@ -23,7 +23,7 @@ if_label2:
 br label %bExpr_7
 bExpr_7:
 %temp_var11 = icmp eq i32 0, 1
-br i1 null, label %if_label9, label %end_label8
+br i1 %temp_var11, label %if_label9, label %end_label8
 if_label9:
 %pont__ola = alloca i32
 store i32 3, i32* %pont__ola

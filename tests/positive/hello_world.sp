@@ -25,7 +25,9 @@ main:Int where main > 2*4 (a:Int, b:[String]){
 		if 5 > 4 {
 			(* TESTE *)
 			a:Int = 2;
+			printf("%i", a);
 		} else {
+			printf("%s", "ab");
 			while true {
 				if 1 > 2 {
 					_ola:Int = 3*4; 

@@ -25,7 +25,7 @@ store double 4.5, double* %temp_var5
 %str_value9 = mul i32 45 , %str_value8
 %temp_var10 = load i32, i32* %pont_c
 %temp_var11 = icmp eq i32 %str_value9, %temp_var10
-br i1 null, label %end_label1, label %end_label1
+br i1 %temp_var11, label %end_label1, label %end_label1
 end_label1:
 %temp_var12 = alloca double
 store double 5.0, double* %temp_var12
